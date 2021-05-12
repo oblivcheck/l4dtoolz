@@ -14,5 +14,4 @@
 #include "l4d2_signature_linux.h"
 #endif
 #endif
-
 #endif //_INCLUDE_GAME_SIGNATURE_

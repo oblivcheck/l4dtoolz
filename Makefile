@@ -7,9 +7,9 @@ GIT_VERSION = $(shell sh -c 'git describe --abbrev=8 --dirty --always')
 ### EDIT THESE PATHS FOR YOUR OWN SETUP ###
 ###########################################
 
-HL2SDK_L4D = ../../hl2sdk-l4d
-HL2SDK_L4D2 = ../../hl2sdk-l4d2
-MMSOURCE19 = ..
+HL2SDK_L4D = ../hl2sdk-l4d
+HL2SDK_L4D2 = ../hl2sdk-l4d2
+MMSOURCE19 = ../metamod-source
 
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
@@ -48,10 +48,6 @@ ifeq "$(ENGINE)" "left4dead2"
 	CFLAGS += -DSOURCE_ENGINE=9 -DL4D2
 endif
 
-ifneq "$(GIT_VERSION)" ""
-	CFLAGS += -D__GIT_VERSION=\"$(GIT_VERSION)\"
-endif
-
 HL2PUB = $(HL2SDK)/public
 
 
@@ -81,7 +77,7 @@ else
 endif
 
 
-CFLAGS += -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODTIME=4 -DSE_EYE=5 \
+CFLAGS += -std=c++11 -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODTIME=4 -DSE_EYE=5 \
 	-DSE_CSS=6 -DSE_ORANGEBOXVALVE=7 -DSE_LEFT4DEAD=8 -DSE_LEFT4DEAD2=9 -DSE_ALIENSWARM=10 \
 	-DSE_PORTAL2=11 -DSE_CSGO=12
 
