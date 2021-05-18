@@ -1,17 +1,15 @@
 #include "l4dtoolz_mm.h"
-#include "signature.h"
 #include "game_signature.h"
 
 l4dtoolz g_l4dtoolz;
 IVEngineServer *engine = NULL;
-IServerPluginCallbacks *vsp_callbacks = NULL;
 ICvar *icvar = NULL;
 
 #ifdef L4D1
 void *l4dtoolz::max_players_friend_lobby = NULL;
 void *l4dtoolz::chuman_limit = NULL;
-void *friends_lobby_org = NULL;
-void *human_limit_org = NULL;
+void *l4dtoolz::friends_lobby_org = NULL;
+void *l4dtoolz::human_limit_org = NULL;
 #endif
 void *l4dtoolz::max_players_connect = NULL;
 void *l4dtoolz::max_players_server_browser = NULL;
@@ -20,13 +18,13 @@ void *l4dtoolz::tmp_player = NULL;
 void *l4dtoolz::tmp_player2 = NULL;
 void *l4dtoolz::unreserved_ptr = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
-void *max_players_org = NULL;
-void *server_bplayers_org = NULL;
-void *lobby_sux_org = NULL;
-void *players_org = NULL;
-void *players_org2 = NULL;
-void *unreserved_org = NULL;
-void *lobby_match_org = NULL;
+void *l4dtoolz::max_players_org = NULL;
+void *l4dtoolz::server_bplayers_org = NULL;
+void *l4dtoolz::lobby_sux_org = NULL;
+void *l4dtoolz::players_org = NULL;
+void *l4dtoolz::players_org2 = NULL;
+void *l4dtoolz::unreserved_org = NULL;
+void *l4dtoolz::lobby_match_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max Human Players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
 #ifdef L4D1
@@ -39,9 +37,9 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
 #ifdef L4D1
-	if(max_players_friend_lobby==NULL || max_players_connect==NULL || max_players_server_browser==NULL || lobby_sux_ptr==NULL){
+	if(!max_players_friend_lobby || !max_players_connect || !max_players_server_browser || !lobby_sux_ptr){
 #else
-	if(max_players_connect==NULL || max_players_server_browser==NULL || lobby_sux_ptr==NULL){
+	if(!max_players_connect || !max_players_server_browser || !lobby_sux_ptr){
 #endif
 		Msg("sv_maxplayers init error\n");
 		return;
@@ -52,7 +50,7 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 	#else
 		max_players_new[4] = server_bplayers_new[3] = (unsigned char)new_value;
 	#endif
-		if(lobby_match_ptr){ // GetTotalNumPlayersSupported
+		if(lobby_match_ptr){
 			lobby_match_new[2] = (unsigned char)new_value;
 			write_signature(lobby_match_ptr, lobby_match_new);
 		}else{
@@ -61,9 +59,9 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 	#ifdef L4D1
 		write_signature(max_players_friend_lobby, friends_lobby_new);
 	#endif
-		write_signature(max_players_connect, max_players_new); // Valve_Reject_Server_Full
+		write_signature(max_players_connect, max_players_new);
 		write_signature(lobby_sux_ptr, lobby_sux_new);
-		write_signature(max_players_server_browser, server_bplayers_new); // server browser
+		write_signature(max_players_server_browser, server_bplayers_new);
 	}else{
 	#ifdef L4D1
 		write_signature(max_players_friend_lobby, friends_lobby_org);
@@ -80,7 +78,7 @@ void l4dtoolz::OnChangeRemovehumanlimit(IConVar *var, const char *pOldValue, flo
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(chuman_limit==NULL){
+	if(!chuman_limit){
 		Msg("sv_removehumanlimit init error\n");
 		return;
 	}
@@ -93,7 +91,7 @@ void l4dtoolz::OnChangeUnreserved(IConVar *var, const char *pOldValue, float flO
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(unreserved_ptr==NULL){
+	if(!unreserved_ptr){
 		Msg("unreserved_ptr init error\n");
 		return;
 	}
@@ -118,16 +116,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	PLUGIN_SAVEVARS();
 	GET_V_IFACE_CURRENT(GetEngineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE_CURRENT(GetEngineFactory, icvar, ICvar, CVAR_INTERFACE_VERSION);
-#if defined METAMOD_PLAPI_VERSION
-	if((vsp_callbacks = ismm->GetVSPInfo(NULL))==NULL)
-#endif
-	{
-		ismm->AddListener(this, this);
-		ismm->EnableVSPListener();
-	}
-#if !defined METAMOD_PLAPI_VERSION
-	m_EngineCC = SH_GET_CALLCLASS(engine);
-#endif
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
@@ -211,9 +199,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 }
 
 bool l4dtoolz::Unload(char *error, size_t maxlen){
-#if !defined METAMOD_PLAPI_VERSION
-	SH_RELEASE_CALLCLASS(m_EngineCC);
-#endif
 #ifdef L4D1
 	safe_free(max_players_friend_lobby, friends_lobby_org);
 	safe_free(chuman_limit, human_limit_org);
@@ -228,16 +213,20 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	return true;
 }
 
-void l4dtoolz::OnVSPListening(IServerPluginCallbacks*iface){
-	vsp_callbacks = iface;
+const char *l4dtoolz::GetAuthor(){
+	return "Ivailosp, lakwsh";
 }
 
-bool l4dtoolz::Pause(char *error, size_t maxlen){
-	return true;
+const char *l4dtoolz::GetName(){
+	return "L4DToolZ";
 }
 
-bool l4dtoolz::Unpause(char *error, size_t maxlen){
-	return true;
+const char *l4dtoolz::GetDescription(){
+	return "";
+}
+
+const char *l4dtoolz::GetURL(){
+	return "";
 }
 
 const char *l4dtoolz::GetLicense(){
@@ -245,7 +234,7 @@ const char *l4dtoolz::GetLicense(){
 }
 
 const char *l4dtoolz::GetVersion(){
-	return "1.0.0.10";
+	return "1.0.0.11";
 }
 
 const char *l4dtoolz::GetDate(){
@@ -254,20 +243,4 @@ const char *l4dtoolz::GetDate(){
 
 const char *l4dtoolz::GetLogTag(){
 	return "L4DToolZ";
-}
-
-const char *l4dtoolz::GetAuthor(){
-	return "Ivailosp, lakwsh";
-}
-
-const char *l4dtoolz::GetDescription(){
-	return "";
-}
-
-const char *l4dtoolz::GetName(){
-	return "L4DToolZ";
-}
-
-const char *l4dtoolz::GetURL(){
-	return "n/a";
 }

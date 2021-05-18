@@ -15,7 +15,7 @@ MMSOURCE19 = ../metamod-source
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-PROJECT = l4dtoolz_mm_i486
+PROJECT = l4dtoolz_mm
 OBJECTS = l4dtoolz_mm.cpp signature.cpp
 
 ##############################################
