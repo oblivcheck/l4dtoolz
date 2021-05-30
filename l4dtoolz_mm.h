@@ -20,16 +20,7 @@ public:
 
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnChangeUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
-#ifdef L4D1
-	static void OnChangeRemovehumanlimit(IConVar *var, const char *pOldValue, float flOldValue);
-#endif
 private:
-#ifdef L4D1
-	static void *max_players_friend_lobby;
-	static void *chuman_limit;
-	static void *friends_lobby_org;
-	static void *human_limit_org;
-#endif
 	static void *max_players_connect;
 	static void *max_players_server_browser;
 	static void *lobby_sux_ptr;

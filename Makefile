@@ -3,19 +3,11 @@
 
 GIT_VERSION = $(shell sh -c 'git describe --abbrev=8 --dirty --always')
 
-###########################################
-### EDIT THESE PATHS FOR YOUR OWN SETUP ###
-###########################################
-
-HL2SDK_L4D = ../hl2sdk-l4d
-HL2SDK_L4D2 = ../hl2sdk-l4d2
-MMSOURCE19 = ../metamod-source
-
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-PROJECT = l4dtoolz_mm
+PROJECT = l4dtoolz
 OBJECTS = l4dtoolz_mm.cpp signature.cpp
 
 ##############################################
@@ -32,27 +24,12 @@ CPP_OSX = clang
 ### SDK CONFIGURATIONS ###
 ##########################
 
-override ENGSET = false
-
-# Check for valid list of engines
-ifneq (,$(filter left4dead left4dead2,$(ENGINE)))
-	override ENGSET = true
-endif
-
-ifeq "$(ENGINE)" "left4dead"
-	HL2SDK = $(HL2SDK_L4D)
-	CFLAGS += -DSOURCE_ENGINE=8 -DL4D1
-endif
-ifeq "$(ENGINE)" "left4dead2"
-	HL2SDK = $(HL2SDK_L4D2)
-	CFLAGS += -DSOURCE_ENGINE=9 -DL4D2
-endif
-
+ENGINE = left4dead2
+HL2SDK = ../hl2sdk-l4d2
+METAMOD = ../metamod-source/core
 HL2PUB = $(HL2SDK)/public
-
-
 INCLUDE += -I$(HL2SDK)/public/game/server
-METAMOD = $(MMSOURCE19)/core
+
 
 OS := $(shell uname -s)
 
@@ -77,9 +54,7 @@ else
 endif
 
 
-CFLAGS += -std=c++11 -DSE_EPISODEONE=1 -DSE_DARKMESSIAH=2 -DSE_ORANGEBOX=3 -DSE_BLOODYGOODTIME=4 -DSE_EYE=5 \
-	-DSE_CSS=6 -DSE_ORANGEBOXVALVE=7 -DSE_LEFT4DEAD=8 -DSE_LEFT4DEAD2=9 -DSE_ALIENSWARM=10 \
-	-DSE_PORTAL2=11 -DSE_CSGO=12
+CFLAGS += -std=c++11 -DSE_LEFT4DEAD2=9 -DSOURCE_ENGINE=9 -DL4D2
 
 LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX)
 
@@ -147,25 +122,18 @@ OBJ_BIN := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
 $(BIN_DIR)/%.o: %.cpp
 	$(CPP) $(INCLUDE) $(CFLAGS) -o $@ -c $<
 
-all: check
+all:
 	mkdir -p $(BIN_DIR)
 	ln -sf $(HL2LIB)/$(LIB_PREFIX)vstdlib$(LIB_SUFFIX)
 	ln -sf $(HL2LIB)/$(LIB_PREFIX)tier0$(LIB_SUFFIX)
 	$(MAKE) -f Makefile l4dtoolz_mm
-	
-check:
-	if [ "$(ENGSET)" = "false" ]; then \
-		echo "You must supply one of the following values for ENGINE:"; \
-		echo "left4dead2 or left4dead"; \
-		exit 1; \
-	fi
 
-l4dtoolz_mm: check $(OBJ_BIN)
+l4dtoolz_mm: $(OBJ_BIN)
 	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
 
 default: all
 
-clean: check
+clean:
 	rm -rf $(BIN_DIR)/*.o
 	rm -rf $(BIN_DIR)/$(BINARY)
 
