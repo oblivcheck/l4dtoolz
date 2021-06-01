@@ -1,55 +1,58 @@
 #include "l4dtoolz_mm.h"
 #ifdef WIN32
-#include "l4d2_signature_win32.h"
+#include "signature_win32.h"
 #else
-#include "l4d2_signature_linux.h"
+#include "signature_linux.h"
 #endif
 
 l4dtoolz g_l4dtoolz;
 IVEngineServer *engine = NULL;
 ICvar *icvar = NULL;
 
-void *l4dtoolz::max_players_connect = NULL;
-void *l4dtoolz::max_players_server_browser = NULL;
-void *l4dtoolz::lobby_sux_ptr = NULL;
-void *l4dtoolz::tmp_player = NULL;
-void *l4dtoolz::tmp_player2 = NULL;
-void *l4dtoolz::unreserved_ptr = NULL;
+void *l4dtoolz::info_players_ptr = NULL;
+void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
-void *l4dtoolz::max_players_org = NULL;
-void *l4dtoolz::server_bplayers_org = NULL;
-void *l4dtoolz::lobby_sux_org = NULL;
-void *l4dtoolz::players_org = NULL;
-void *l4dtoolz::players_org2 = NULL;
-void *l4dtoolz::unreserved_org = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
+void *l4dtoolz::reserved_ptr = NULL;
+void *l4dtoolz::reserved_org = NULL;
+void *l4dtoolz::maxslots_ptr = NULL;
+void *l4dtoolz::maxslots_org = NULL;
+void *l4dtoolz::slots_check_ptr = NULL;
+void *l4dtoolz::slots_check_org = NULL;
+void *l4dtoolz::players_running_ptr = NULL;
+void *l4dtoolz::players_running_org = NULL;
+void *l4dtoolz::players_range_ptr = NULL;
+void *l4dtoolz::players_range_org = NULL;
+void *l4dtoolz::allow_cheats_ptr = NULL;
+void *l4dtoolz::allow_cheats_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max Human Players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
 ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation cookie", true, 0, true, 1, l4dtoolz::OnChangeUnreserved);
+ConVar sv_allow_cheats("sv_allow_cheats", "0", 0, "Allow partial cheat commands", true, 0, true, 1, l4dtoolz::OnChangeCheats);
 
 void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(!max_players_connect || !max_players_server_browser || !lobby_sux_ptr){
+	if(!slots_check_ptr || !maxslots_ptr || !info_players_ptr){
 		Msg("sv_maxplayers init error\n");
 		return;
 	}
 	if(new_value>=0){
-		max_players_new[4] = server_bplayers_new[3] = (unsigned char)new_value;
+		maxslots_new[4] = info_players_new[3] = (unsigned char)new_value;
 		if(lobby_match_ptr){
 			lobby_match_new[2] = (unsigned char)new_value;
 			write_signature(lobby_match_ptr, lobby_match_new);
 		}else{
 			Msg("sv_maxplayers MS init error\n");
 		}
-		write_signature(max_players_connect, max_players_new);
-		write_signature(lobby_sux_ptr, lobby_sux_new);
-		write_signature(max_players_server_browser, server_bplayers_new);
+		write_signature(maxslots_ptr, maxslots_new);
+		write_signature(slots_check_ptr, slots_check_new);
+		write_signature(info_players_ptr, info_players_new);
 	}else{
-		write_signature(max_players_connect, max_players_org);
-		write_signature(lobby_sux_ptr, lobby_sux_org);
-		write_signature(max_players_server_browser, server_bplayers_org);
+		write_signature(maxslots_ptr, maxslots_org);
+		write_signature(slots_check_ptr, slots_check_org);
+		write_signature(info_players_ptr, info_players_org);
 		if(lobby_match_ptr) write_signature(lobby_match_ptr, lobby_match_org);
 	}
 }
@@ -58,16 +61,27 @@ void l4dtoolz::OnChangeUnreserved(IConVar *var, const char *pOldValue, float flO
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(!unreserved_ptr){
-		Msg("unreserved_ptr init error\n");
+	if(!reserved_ptr){
+		Msg("reserved_ptr init error\n");
 		return;
 	}
 	if(new_value==1){
-		write_signature(unreserved_ptr, unreserved_new);
+		write_signature(reserved_ptr, reserved_new);
 		engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 	}else{
-		write_signature(unreserved_ptr, unreserved_org);
+		write_signature(reserved_ptr, reserved_org);
 	}
+}
+
+void l4dtoolz::OnChangeCheats(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+	if(!allow_cheats_ptr){
+		Msg("allow_cheats_ptr init error\n");
+		return;
+	}
+	write_signature(allow_cheats_ptr, new_value?allow_cheats_new:allow_cheats_org);
 }
 
 class BaseAccessor: public IConCommandBaseAccessor{
@@ -93,59 +107,63 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	base_addr.addr = NULL;
 	base_addr.len = 0;
 
-	find_base_from_list(matchmaking_dll, &base_addr);
+	find_base_from_list(srv_dll, &base_addr);
+	if(!info_players_ptr){
+		info_players_ptr = find_signature(info_players, &base_addr, 0);
+		get_original_signature(info_players_ptr, info_players_new, info_players_org);
+	}
+
+	find_base_from_list(mat_dll, &base_addr);
 	if(!lobby_match_ptr){
 		lobby_match_ptr = find_signature(lobby_match, &base_addr, 1);
 		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
-	find_base_from_list(engine_dll, &base_addr);
-	if(!max_players_connect){
-		max_players_connect = find_signature(max_players, &base_addr, 0);
-		get_original_signature(max_players_connect, max_players_new, max_players_org);
+	find_base_from_list(eng_dll, &base_addr);
+	if(!reserved_ptr){
+		reserved_ptr = find_signature(reserved, &base_addr, 0);
+		get_original_signature(reserved_ptr, reserved_new, reserved_org);
 	}
-	if(!lobby_sux_ptr){
+	if(!maxslots_ptr){
+		maxslots_ptr = find_signature(maxslots, &base_addr, 0);
+		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
+	}
+	if(!slots_check_ptr){
 	#ifdef WIN32
-		lobby_sux_ptr = max_players_connect;
+		slots_check_ptr = maxslots_ptr;
 	#else
-		lobby_sux_ptr = find_signature(lobby_sux, &base_addr, 0);
+		slots_check_ptr = find_signature(slots_check, &base_addr, 0);
 	#endif
-		get_original_signature(lobby_sux_ptr, lobby_sux_new, lobby_sux_org);
+		get_original_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-	if(!tmp_player){
-		tmp_player = find_signature(players, &base_addr, 0);
-		if(tmp_player){
-			tmp_player2 = find_signature(players2, &base_addr, 0);
-			if(tmp_player2){
-				get_original_signature(tmp_player, players_new, players_org);
-				get_original_signature(tmp_player2, players_new2, players_org2);
-				write_signature(tmp_player, players_new);
-				write_signature(tmp_player2, players_new2);
-				engine->ServerCommand("maxplayers 32\n");
+	if(!players_running_ptr){
+		if((players_running_ptr = find_signature(players_running, &base_addr, 0))){
+			if((players_range_ptr = find_signature(players_range, &base_addr, 0))){
+				get_original_signature(players_running_ptr, players_running_new, players_running_org);
+				write_signature(players_running_ptr, players_running_new);
+				get_original_signature(players_range_ptr, players_range_new, players_range_org);
+				write_signature(players_range_ptr, players_range_new);
 			}
 		}
 	}
-	if(!unreserved_ptr){
-		unreserved_ptr = find_signature(unreserved, &base_addr, 0);
-		get_original_signature(unreserved_ptr, unreserved_new, unreserved_org);
+	if(!allow_cheats_ptr){
+		allow_cheats_ptr = find_signature(allow_cheats, &base_addr, 0);
+		get_original_signature(allow_cheats_ptr, allow_cheats_new, allow_cheats_org);
 	}
 
-	find_base_from_list(server_dll, &base_addr);
-	if(!max_players_server_browser){
-		max_players_server_browser = find_signature(server_bplayers, &base_addr, 0);
-		get_original_signature(max_players_server_browser, server_bplayers_new, server_bplayers_org);
-	}
+	engine->ServerCommand("maxplayers 32\n");
 	return true;
 }
 
 bool l4dtoolz::Unload(char *error, size_t maxlen){
-	safe_free(max_players_connect, max_players_org);
-	safe_free(lobby_sux_ptr, lobby_sux_org);
-	safe_free(max_players_server_browser, server_bplayers_org);
-	safe_free(tmp_player, players_org);
-	safe_free(tmp_player2, players_org2);
-	safe_free(unreserved_ptr, unreserved_org);
+	safe_free(info_players_ptr, info_players_org);
 	safe_free(lobby_match_ptr, lobby_match_org);
+	safe_free(reserved_ptr, reserved_org);
+	safe_free(maxslots_ptr, maxslots_org);
+	safe_free(slots_check_ptr, slots_check_org);
+	safe_free(players_running_ptr, players_running_org);
+	safe_free(players_range_ptr, players_range_org);
+	safe_free(allow_cheats_ptr, allow_cheats_org);
 	return true;
 }
 
@@ -170,7 +188,7 @@ const char *l4dtoolz::GetLicense(){
 }
 
 const char *l4dtoolz::GetVersion(){
-	return "1.0.0.11";
+	return "1.0.1";
 }
 
 const char *l4dtoolz::GetDate(){

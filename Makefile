@@ -7,7 +7,7 @@ GIT_VERSION = $(shell sh -c 'git describe --abbrev=8 --dirty --always')
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-PROJECT = l4dtoolz
+PROJECT = l4dtoolz_mm
 OBJECTS = l4dtoolz_mm.cpp signature.cpp
 
 ##############################################

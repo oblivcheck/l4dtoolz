@@ -20,21 +20,24 @@ public:
 
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnChangeUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnChangeCheats(IConVar *var, const char *pOldValue, float flOldValue);
 private:
-	static void *max_players_connect;
-	static void *max_players_server_browser;
-	static void *lobby_sux_ptr;
-	static void *tmp_player;
-	static void *tmp_player2;
-	static void *unreserved_ptr;
+	static void *info_players_ptr;
+	static void *info_players_org;
 	static void *lobby_match_ptr;
-	static void *max_players_org;
-	static void *server_bplayers_org;
-	static void *lobby_sux_org;
-	static void *players_org;
-	static void *players_org2;
-	static void *unreserved_org;
 	static void *lobby_match_org;
+	static void *reserved_ptr;
+	static void *reserved_org;
+	static void *maxslots_ptr;
+	static void *maxslots_org;
+	static void *slots_check_ptr;
+	static void *slots_check_org;
+	static void *players_running_ptr;
+	static void *players_running_org;
+	static void *players_range_ptr;
+	static void *players_range_org;
+	static void *allow_cheats_ptr;
+	static void *allow_cheats_org;
 
 	static void safe_free(void *addr, void *&signature){
 		if(!signature) return;
