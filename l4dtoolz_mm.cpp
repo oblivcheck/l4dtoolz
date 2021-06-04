@@ -26,7 +26,7 @@ void *l4dtoolz::players_range_org = NULL;
 void *l4dtoolz::allow_cheats_ptr = NULL;
 void *l4dtoolz::allow_cheats_org = NULL;
 
-ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max Human Players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
+ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
 ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation cookie", true, 0, true, 1, l4dtoolz::OnChangeUnreserved);
 ConVar sv_allow_cheats("sv_allow_cheats", "0", 0, "Allow partial cheat commands", true, 0, true, 1, l4dtoolz::OnChangeCheats);
 
@@ -150,8 +150,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		allow_cheats_ptr = find_signature(allow_cheats, &base_addr, 0);
 		get_original_signature(allow_cheats_ptr, allow_cheats_new, allow_cheats_org);
 	}
-
-	engine->ServerCommand("maxplayers 32\n");
 	return true;
 }
 

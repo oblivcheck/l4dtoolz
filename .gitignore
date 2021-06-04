@@ -52,3 +52,4 @@ Thumbs.db
 *.exp
 Debug*
 Release*
+/msvc8/.vs/
