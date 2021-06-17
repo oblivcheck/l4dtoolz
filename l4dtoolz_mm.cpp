@@ -186,7 +186,7 @@ const char *l4dtoolz::GetLicense(){
 }
 
 const char *l4dtoolz::GetVersion(){
-	return "1.0.1";
+	return "1.0.1.1";
 }
 
 const char *l4dtoolz::GetDate(){
