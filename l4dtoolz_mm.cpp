@@ -178,7 +178,7 @@ const char *l4dtoolz::GetDescription(){
 }
 
 const char *l4dtoolz::GetURL(){
-	return "";
+	return "https://github.com/lakwsh/l4dtoolz";
 }
 
 const char *l4dtoolz::GetLicense(){
@@ -186,7 +186,7 @@ const char *l4dtoolz::GetLicense(){
 }
 
 const char *l4dtoolz::GetVersion(){
-	return "1.0.1.1";
+	return "1.0.1.2";
 }
 
 const char *l4dtoolz::GetDate(){

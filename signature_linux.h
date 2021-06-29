@@ -9,7 +9,7 @@ const char *info_players = "\x08\xC9\x3C\x01\x19\xC0\x83\xE0\xFC";
 unsigned char info_players_new[] = {0x06, 0xF5, 0xB8, 0x3C, 0x00, 0x00, 0x00, 0xC3};
 
 const char *lobby_match = "\x09\x55\xB8\x08\x00\x00\x00\x89\xE5\x5D";
-unsigned char lobby_match_new[] = {0x01, 0x02, 0xC3};
+unsigned char lobby_match_new[] = {0x01, 0x02, 0x3C};
 
 const char *reserved = "\x08\x31\xFF\x8B\x45\x0C\x8B\x75\x10";
 const char *reserved_new = "\x01\xE7\xC3";
