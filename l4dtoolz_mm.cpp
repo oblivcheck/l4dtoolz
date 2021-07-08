@@ -44,7 +44,7 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 			lobby_match_new[2] = (unsigned char)new_value;
 			write_signature(lobby_match_ptr, lobby_match_new);
 		}else{
-			Msg("sv_maxplayers MS init error\n");
+			Msg("lobby_match_ptr init error\n");
 		}
 		write_signature(maxslots_ptr, maxslots_new);
 		write_signature(slots_check_ptr, slots_check_new);

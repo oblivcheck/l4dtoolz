@@ -10,6 +10,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <link.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #endif
 
 #define SIGN_HEADER_LEN		2
@@ -62,6 +64,89 @@ void *find_signature(const char *mask, struct base_addr_t *base_addr, int pure){
 	munlock(all_adr, size);
 #endif
 	return NULL;
+}
+
+#ifndef WIN32
+void *real(void *handle, const char *symbol){
+	typedef Elf32_Ehdr ElfHeader;
+	typedef Elf32_Shdr ElfSHeader;
+	typedef Elf32_Sym ElfSymbol;
+	#define ELF_SYM_TYPE ELF32_ST_TYPE
+
+	struct link_map *dlmap = (struct link_map *)handle;
+	int dlfile = open(dlmap->l_name, O_RDONLY);
+	struct stat dlstat;
+	if(dlfile==-1 || fstat(dlfile, &dlstat)==-1){
+		close(dlfile);
+		return NULL;
+	}
+
+	/* Map library file into memory */
+	ElfHeader *file_hdr = (ElfHeader *)mmap(NULL, dlstat.st_size, PROT_READ, MAP_PRIVATE, dlfile, 0);
+	close(dlfile);
+	if(file_hdr==MAP_FAILED) return NULL;
+	if(!file_hdr->e_shoff || file_hdr->e_shstrndx==SHN_UNDEF){
+		munmap(file_hdr, dlstat.st_size);
+		return NULL;
+	}
+
+	uintptr_t map_base = (uintptr_t)file_hdr;
+	ElfSHeader *sections = (ElfSHeader *)(map_base+file_hdr->e_shoff);
+	/* Get ELF section header string table */
+	ElfSHeader *shstrtab_hdr = &sections[file_hdr->e_shstrndx];
+	const char *shstrtab = (const char *)(map_base+shstrtab_hdr->sh_offset);
+
+	/* Iterate sections while looking for ELF symbol table and string table */
+	ElfSHeader *symtab_hdr = NULL, *strtab_hdr = NULL;
+	for(uint16_t i = 0; i<file_hdr->e_shnum; i++){
+		ElfSHeader &hdr = sections[i];
+		const char *section_name = shstrtab+hdr.sh_name;
+
+		if(!strcmp(section_name, ".symtab")) symtab_hdr = &hdr;
+		else if(!strcmp(section_name, ".strtab")) strtab_hdr = &hdr;
+	}
+	if(!symtab_hdr || !strtab_hdr){
+		munmap(file_hdr, dlstat.st_size);
+		return NULL;
+	}
+
+	ElfSymbol *symtab = (ElfSymbol *)(map_base+symtab_hdr->sh_offset);
+	const char *strtab = (const char *)(map_base+strtab_hdr->sh_offset);
+	void *result = NULL;
+	/* Iterate symbol table starting from the position we were at last time */
+	for(uint32_t i = 0; i<symtab_hdr->sh_size/symtab_hdr->sh_entsize; i++){
+		ElfSymbol &sym = symtab[i];
+		unsigned char sym_type = ELF_SYM_TYPE(sym.st_info);
+		const char *sym_name = strtab+sym.st_name;
+		/* Skip symbols that are undefined or do not refer to functions or objects */
+		if(sym.st_shndx==SHN_UNDEF || (sym_type!=STT_FUNC && sym_type!=STT_OBJECT)) continue;
+		if(!strcmp(symbol, sym_name)){
+			result = (void *)(dlmap->l_addr+sym.st_value);
+			break;
+		}
+	}
+
+	munmap(file_hdr, dlstat.st_size);
+	return result;
+}
+#endif
+
+void *resolveSymbol(void *addr, const char *symbol){
+#ifdef WIN32
+	return GetProcAddress((HMODULE)addr, symbol);
+#else
+	void *result = NULL;
+	Dl_info info;
+	if(dladdr(addr, &info)){
+		void *handle = dlopen(info.dli_fname, RTLD_NOW);
+		if(handle){
+			//result = dlsym(handle, symbol);
+			result = real(handle, symbol);
+			dlclose(handle);
+		}
+	}
+	return result;
+#endif
 }
 
 #ifndef WIN32
@@ -169,4 +254,11 @@ void get_original_signature(void *offset, const void *new_sig, void *&org_sig){
 	org_sig = malloc(((unsigned char *)new_sig)[SIGN_LEN_BYTE]+SIGN_HEADER_LEN);
 	memcpy(org_sig, new_sig, SIGN_HEADER_LEN);
 	read_signature(offset, org_sig);
+}
+
+void safe_free(void *addr, void *&signature){
+	if(!signature) return;
+	write_signature(addr, signature);
+	free(signature);
+	signature = NULL;
 }

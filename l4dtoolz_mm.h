@@ -38,13 +38,6 @@ private:
 	static void *players_range_org;
 	static void *allow_cheats_ptr;
 	static void *allow_cheats_org;
-
-	static void safe_free(void *addr, void *&signature){
-		if(!signature) return;
-		write_signature(addr, signature);
-		free(signature);
-		signature = NULL;
-	}
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();
