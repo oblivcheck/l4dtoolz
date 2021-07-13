@@ -10,8 +10,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <link.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #endif
 
 #define SIGN_HEADER_LEN		2
@@ -66,71 +64,6 @@ void *find_signature(const char *mask, struct base_addr_t *base_addr, int pure){
 	return NULL;
 }
 
-#ifndef WIN32
-void *real(void *handle, const char *symbol){
-	typedef Elf32_Ehdr ElfHeader;
-	typedef Elf32_Shdr ElfSHeader;
-	typedef Elf32_Sym ElfSymbol;
-	#define ELF_SYM_TYPE ELF32_ST_TYPE
-
-	struct link_map *dlmap = (struct link_map *)handle;
-	int dlfile = open(dlmap->l_name, O_RDONLY);
-	struct stat dlstat;
-	if(dlfile==-1 || fstat(dlfile, &dlstat)==-1){
-		close(dlfile);
-		return NULL;
-	}
-
-	/* Map library file into memory */
-	ElfHeader *file_hdr = (ElfHeader *)mmap(NULL, dlstat.st_size, PROT_READ, MAP_PRIVATE, dlfile, 0);
-	close(dlfile);
-	if(file_hdr==MAP_FAILED) return NULL;
-	if(!file_hdr->e_shoff || file_hdr->e_shstrndx==SHN_UNDEF){
-		munmap(file_hdr, dlstat.st_size);
-		return NULL;
-	}
-
-	uintptr_t map_base = (uintptr_t)file_hdr;
-	ElfSHeader *sections = (ElfSHeader *)(map_base+file_hdr->e_shoff);
-	/* Get ELF section header string table */
-	ElfSHeader *shstrtab_hdr = &sections[file_hdr->e_shstrndx];
-	const char *shstrtab = (const char *)(map_base+shstrtab_hdr->sh_offset);
-
-	/* Iterate sections while looking for ELF symbol table and string table */
-	ElfSHeader *symtab_hdr = NULL, *strtab_hdr = NULL;
-	for(uint16_t i = 0; i<file_hdr->e_shnum; i++){
-		ElfSHeader &hdr = sections[i];
-		const char *section_name = shstrtab+hdr.sh_name;
-
-		if(!strcmp(section_name, ".symtab")) symtab_hdr = &hdr;
-		else if(!strcmp(section_name, ".strtab")) strtab_hdr = &hdr;
-	}
-	if(!symtab_hdr || !strtab_hdr){
-		munmap(file_hdr, dlstat.st_size);
-		return NULL;
-	}
-
-	ElfSymbol *symtab = (ElfSymbol *)(map_base+symtab_hdr->sh_offset);
-	const char *strtab = (const char *)(map_base+strtab_hdr->sh_offset);
-	void *result = NULL;
-	/* Iterate symbol table starting from the position we were at last time */
-	for(uint32_t i = 0; i<symtab_hdr->sh_size/symtab_hdr->sh_entsize; i++){
-		ElfSymbol &sym = symtab[i];
-		unsigned char sym_type = ELF_SYM_TYPE(sym.st_info);
-		const char *sym_name = strtab+sym.st_name;
-		/* Skip symbols that are undefined or do not refer to functions or objects */
-		if(sym.st_shndx==SHN_UNDEF || (sym_type!=STT_FUNC && sym_type!=STT_OBJECT)) continue;
-		if(!strcmp(symbol, sym_name)){
-			result = (void *)(dlmap->l_addr+sym.st_value);
-			break;
-		}
-	}
-
-	munmap(file_hdr, dlstat.st_size);
-	return result;
-}
-#endif
-
 void *resolveSymbol(void *addr, const char *symbol){
 #ifdef WIN32
 	return GetProcAddress((HMODULE)addr, symbol);
@@ -140,8 +73,7 @@ void *resolveSymbol(void *addr, const char *symbol){
 	if(dladdr(addr, &info)){
 		void *handle = dlopen(info.dli_fname, RTLD_NOW);
 		if(handle){
-			//result = dlsym(handle, symbol);
-			result = real(handle, symbol);
+			result = dlsym(handle, symbol);
 			dlclose(handle);
 		}
 	}
@@ -150,52 +82,37 @@ void *resolveSymbol(void *addr, const char *symbol){
 }
 
 #ifndef WIN32
-struct v_data{
+typedef struct{
 	const char *fname;
 	void *baddr;
 	unsigned int blen;
-};
+} v_data;
 
 static int callback(struct dl_phdr_info *info, size_t size, void *data){
-	if(!info->dlpi_name || !info->dlpi_name[0]) return 0;
-	if(strstr(info->dlpi_name, ((struct v_data *)data)->fname)){
-		if(strstr(info->dlpi_name, "metamod")==NULL){
-			((struct v_data *)data)->baddr = (void *)info->dlpi_addr;
-			((struct v_data *)data)->blen = 0;
-			for(int i = 0; i<info->dlpi_phnum; ++i){
-				((struct v_data *)data)->blen += info->dlpi_phdr[i].p_filesz;
-				break;
-			}
-			return 1;
-		}
-	}
-	return 0;
+	if(!info->dlpi_name || !strstr(info->dlpi_name, ((v_data *)data)->fname)) return 0;
+	((v_data *)data)->baddr = (void *)info->dlpi_addr;
+	((v_data *)data)->blen = info->dlpi_phdr[0].p_filesz;
+	return 1;
 }
 #endif
 
 bool find_base(const char *name, struct base_addr_t *base_addr){
 #ifdef WIN32
-/*	HANDLE hModuleSnap = INVALID_HANDLE_VALUE; */
 	HANDLE hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 	if(hModuleSnap==INVALID_HANDLE_VALUE) return false;
 	MODULEENTRY32 modent;
 	modent.dwSize = sizeof(MODULEENTRY32);
-	if(!Module32Next(hModuleSnap, &modent)){
-		CloseHandle(hModuleSnap);
-		return false;
-	}
-	do{
+	while(Module32Next(hModuleSnap, &modent)){
 		if(strstr(modent.szExePath, name)){
-			if(strstr(modent.szExePath, "metamod")) continue;
 			base_addr->addr = modent.modBaseAddr;
 			base_addr->len = modent.modBaseSize;
 			CloseHandle(hModuleSnap);
 			return true;
 		}
-	} while(Module32Next(hModuleSnap, &modent));
+	}
 	CloseHandle(hModuleSnap);
 #else
-	struct v_data vdata;
+	v_data vdata;
 	vdata.fname = name;
 	if(dl_iterate_phdr(callback, &vdata)){
 		base_addr->addr = vdata.baddr;
@@ -203,8 +120,6 @@ bool find_base(const char *name, struct base_addr_t *base_addr){
 		return true;
 	}
 #endif
-	base_addr->addr = NULL;
-	base_addr->len = 0;
 	return false;
 }
 
@@ -223,7 +138,7 @@ void write_signature(void *addr, const void *signature){
 	void *src = (void *)((unsigned int)signature+SIGN_HEADER_LEN);
 	void *dst = (void *)((unsigned int)addr+sign_off);
 #ifdef WIN32
-	HANDLE h_process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
+	HANDLE h_process = GetCurrentProcess();
 	WriteProcessMemory(h_process, dst, src, sign_len, NULL);
 	CloseHandle(h_process);
 #else
@@ -239,7 +154,7 @@ void read_signature(void *addr, void *signature){
 	void *src = (void *)((unsigned int)addr+sign_off);
 	void *dst = (void *)((unsigned int)signature+SIGN_HEADER_LEN);
 #ifdef WIN32
-	HANDLE h_process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
+	HANDLE h_process = GetCurrentProcess();
 	ReadProcessMemory(h_process, src, dst, sign_len, NULL);
 	CloseHandle(h_process);
 #else

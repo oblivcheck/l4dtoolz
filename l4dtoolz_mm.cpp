@@ -150,6 +150,8 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		allow_cheats_ptr = find_signature(allow_cheats, &base_addr, 0);
 		get_original_signature(allow_cheats_ptr, allow_cheats_new, allow_cheats_org);
 	}
+	Msg("%p %p %p %p\n", info_players_ptr, lobby_match_ptr, reserved_ptr, maxslots_ptr);
+	Msg("%p %p %p %p\n", slots_check_ptr, players_running_ptr, players_range_ptr, allow_cheats_ptr);
 	return true;
 }
 
