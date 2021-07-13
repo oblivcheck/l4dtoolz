@@ -13,4 +13,5 @@ void write_signature(void *addr, const void *signature);
 void read_signature(void *addr, void *signature);
 void get_original_signature(void *offset, const void *new_sig, void *&org_sig);
 void safe_free(void *addr, void *&signature);
+unsigned int get_offset(int s, ...);
 #endif //_INCLUDE_SIGNATURE_

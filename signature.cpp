@@ -1,6 +1,6 @@
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "signature.h"
 
 #ifdef WIN32
@@ -176,4 +176,12 @@ void safe_free(void *addr, void *&signature){
 	write_signature(addr, signature);
 	free(signature);
 	signature = NULL;
+}
+
+unsigned int get_offset(int s, ...){
+	va_list vl;
+	va_start(vl, s);
+	unsigned int offset = va_arg(vl, int);
+	va_end(vl);
+	return offset;
 }

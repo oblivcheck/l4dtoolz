@@ -11,8 +11,9 @@ unsigned char info_players_new[] = {0x06, 0xF5, 0xB8, 0x3C, 0x00, 0x00, 0x00, 0x
 const char *lobby_match = "\x09\x55\xB8\x08\x00\x00\x00\x89\xE5\x5D";
 unsigned char lobby_match_new[] = {0x01, 0x02, 0x3C};
 
-const char *reserved = "\x08\x31\xFF\x8B\x45\x0C\x8B\x75\x10";
-const char *reserved_new = "\x01\xE7\xC3";
+const char *cookie = "\x08\x31\xFF\x8B\x45\x0C\x8B\x75\x10";
+const int cookie_off = -25;
+const int sv_off = 9;
 
 const char *maxslots = "\x08\x3B\x9F\x7C\x01\x00\x00\x0F\x8E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xFB, 0x3C, 0x90, 0x90, 0x90};
