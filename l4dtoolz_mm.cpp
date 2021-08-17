@@ -63,6 +63,7 @@ CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 		return;
 	}
 	((void (*)(void *, unsigned long long, const char *))cookie)(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
+	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 }
 
 void l4dtoolz::OnChangeCheats(IConVar *var, const char *pOldValue, float flOldValue){
@@ -182,7 +183,7 @@ const char *l4dtoolz::GetLicense(){
 }
 
 const char *l4dtoolz::GetVersion(){
-	return "1.0.2";
+	return "1.0.2.2";
 }
 
 const char *l4dtoolz::GetDate(){

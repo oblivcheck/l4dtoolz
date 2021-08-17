@@ -96,7 +96,7 @@ static int callback(struct dl_phdr_info *info, size_t size, void *data){
 }
 #endif
 
-bool find_base(const char *name, struct base_addr_t *base_addr){
+static bool find_base(const char *name, struct base_addr_t *base_addr){
 #ifdef WIN32
 	HANDLE hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 	if(hModuleSnap==INVALID_HANDLE_VALUE) return false;
@@ -148,7 +148,7 @@ void write_signature(void *addr, const void *signature){
 #endif
 }
 
-void read_signature(void *addr, void *signature){
+static void read_signature(void *addr, void *signature){
 	unsigned int sign_len = ((unsigned char *)signature)[SIGN_LEN_BYTE];
 	int sign_off = ((char *)signature)[SIGN_OFFSET_BYTE];
 	void *src = (void *)((unsigned int)addr+sign_off);
