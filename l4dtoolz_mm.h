@@ -22,7 +22,6 @@ public:
 	static void *GetSv(){ return sv_ptr; }
 
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnChangeCheats(IConVar *var, const char *pOldValue, float flOldValue);
 private:
 	static void *info_players_ptr;
 	static void *info_players_org;
@@ -38,8 +37,6 @@ private:
 	static void *players_running_org;
 	static void *players_range_ptr;
 	static void *players_range_org;
-	static void *allow_cheats_ptr;
-	static void *allow_cheats_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();

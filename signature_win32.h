@@ -25,7 +25,4 @@ const char *players_range_new = "\x06\x00\xB8\x1F\x00\x00\x00\x90";
 
 const char *players_running = "\x0A\x8B\xE5\x5D\xC3\x8B\x80\x0C\x04\x00\x00";
 const char *players_running_new = "\x01\xF0\xEB";
-
-const char *allow_cheats = "\x09\x68\x00\x40\x00\x00\x8B\xCF\xFF\xD2";
-const char *allow_cheats_new = "\x01\x0B\xEB";
 #endif //_INCLUDE_L4D2_SIGNATURE_WIN32_

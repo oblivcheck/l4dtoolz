@@ -11,8 +11,3 @@
 `sv_unreserve`  
 此操作会将`sv_allow_lobby_connect_only`的值置0  
 **注意: 不移除大厅会限制最大玩家数为4人**
-## 2.4 允许部分作弊指令
-`sv_allow_cheats 1`  
-**注意: 无需将sv_cheats的值设为1,因多人原因其他不支持的指令就算解除限制也没有实际效果**  
-提示以下信息表示该指令不支持  
-`Can't use cheat command sb_takecontrol in multiplayer, unless the server has sv_cheats set to 1.`

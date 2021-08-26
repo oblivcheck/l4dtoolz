@@ -23,11 +23,8 @@ void *l4dtoolz::players_running_ptr = NULL;
 void *l4dtoolz::players_running_org = NULL;
 void *l4dtoolz::players_range_ptr = NULL;
 void *l4dtoolz::players_range_org = NULL;
-void *l4dtoolz::allow_cheats_ptr = NULL;
-void *l4dtoolz::allow_cheats_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
-ConVar sv_allow_cheats("sv_allow_cheats", "0", 0, "Allow partial cheat commands", true, 0, true, 1, l4dtoolz::OnChangeCheats);
 
 void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
@@ -66,17 +63,6 @@ CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 }
 
-void l4dtoolz::OnChangeCheats(IConVar *var, const char *pOldValue, float flOldValue){
-	int new_value = ((ConVar *)var)->GetInt();
-	int old_value = atoi(pOldValue);
-	if(new_value==old_value) return;
-	if(!allow_cheats_ptr){
-		Msg("allow_cheats_ptr init error\n");
-		return;
-	}
-	write_signature(allow_cheats_ptr, new_value?allow_cheats_new:allow_cheats_org);
-}
-
 class BaseAccessor:public IConCommandBaseAccessor{
 public:
 	bool RegisterConCommandBase(ConCommandBase *pCommandBase){
@@ -112,16 +98,16 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
-	find_base_from_list(eng_dll, &base_addr);
-	if(!cookie_ptr){
-		cookie_ptr = (void *)((unsigned int)find_signature(cookie, &base_addr, 0)+cookie_off);
-#ifdef WIN32
-	unsigned int off = *(unsigned int *)(get_offset(0, &IVEngineServer::GetPlayerInfo)+4);
-#else
-	unsigned int off = get_offset(0, &IVEngineServer::GetPlayerInfo)-1;
-#endif
-	sv_ptr = *(void **)(*(unsigned int *)(*(unsigned int *)engine+off)+sv_off);
+	if(!sv_ptr){
+	#ifdef WIN32
+		unsigned int off = *(unsigned int *)(get_offset(0, &IVEngineServer::GetPlayerInfo)+4);
+	#else
+		unsigned int off = get_offset(0, &IVEngineServer::GetPlayerInfo)-1;
+	#endif
+		sv_ptr = *(void **)(*(unsigned int *)(*(unsigned int *)engine+off)+sv_off);
 	}
+	find_base_from_list(eng_dll, &base_addr);
+	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((unsigned int)find_signature(cookie, &base_addr, 0)+cookie_off);
 	if(!maxslots_ptr){
 		maxslots_ptr = find_signature(maxslots, &base_addr, 0);
 		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
@@ -144,10 +130,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 			}
 		}
 	}
-	if(!allow_cheats_ptr){
-		allow_cheats_ptr = find_signature(allow_cheats, &base_addr, 0);
-		get_original_signature(allow_cheats_ptr, allow_cheats_new, allow_cheats_org);
-	}
 	return true;
 }
 
@@ -158,7 +140,6 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	safe_free(slots_check_ptr, slots_check_org);
 	safe_free(players_running_ptr, players_running_org);
 	safe_free(players_range_ptr, players_range_org);
-	safe_free(allow_cheats_ptr, allow_cheats_org);
 	return true;
 }
 
