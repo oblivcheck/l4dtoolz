@@ -100,14 +100,14 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 
 	if(!sv_ptr){
 	#ifdef WIN32
-		unsigned int off = *(unsigned int *)(get_offset(0, &IVEngineServer::GetPlayerInfo)+4);
+		uint off = *(uint *)(get_offset(0, &IVEngineServer::GetPlayerInfo)+4);
 	#else
-		unsigned int off = get_offset(0, &IVEngineServer::GetPlayerInfo)-1;
+		uint off = get_offset(0, &IVEngineServer::GetPlayerInfo)-1;
 	#endif
-		sv_ptr = *(void **)(*(unsigned int *)(*(unsigned int *)engine+off)+sv_off);
+		sv_ptr = *(void **)(*(uint *)(*(uint *)engine+off)+sv_off);
 	}
 	find_base_from_list(eng_dll, &base_addr);
-	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((unsigned int)find_signature(cookie, &base_addr, 0)+cookie_off);
+	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((uint)find_signature(cookie, &base_addr, 0)+cookie_off);
 	if(!maxslots_ptr){
 		maxslots_ptr = find_signature(maxslots, &base_addr, 0);
 		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
@@ -132,7 +132,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	}
 	return true;
 }
-
 bool l4dtoolz::Unload(char *error, size_t maxlen){
 	safe_free(info_players_ptr, info_players_org);
 	safe_free(lobby_match_ptr, lobby_match_org);
@@ -141,36 +140,4 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	safe_free(players_running_ptr, players_running_org);
 	safe_free(players_range_ptr, players_range_org);
 	return true;
-}
-
-const char *l4dtoolz::GetAuthor(){
-	return "Ivailosp, lakwsh";
-}
-
-const char *l4dtoolz::GetName(){
-	return "L4DToolZ";
-}
-
-const char *l4dtoolz::GetDescription(){
-	return "";
-}
-
-const char *l4dtoolz::GetURL(){
-	return "https://github.com/lakwsh/l4dtoolz";
-}
-
-const char *l4dtoolz::GetLicense(){
-	return "";
-}
-
-const char *l4dtoolz::GetVersion(){
-	return "1.0.2.2";
-}
-
-const char *l4dtoolz::GetDate(){
-	return __DATE__;
-}
-
-const char *l4dtoolz::GetLogTag(){
-	return "L4DToolZ";
 }

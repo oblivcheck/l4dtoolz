@@ -9,16 +9,16 @@ public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 	bool Unload(char *error, size_t maxlen);
 
-	const char *GetAuthor();
-	const char *GetName();
-	const char *GetDescription();
-	const char *GetURL();
-	const char *GetLicense();
-	const char *GetVersion();
-	const char *GetDate();
-	const char *GetLogTag();
+	const char *GetAuthor(){ return "Ivailosp, lakwsh"; }
+	const char *GetName(){ return "L4DToolZ"; }
+	const char *GetDescription(){ return ""; }
+	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
+	const char *GetLicense(){ return ""; }
+	const char *GetVersion(){ return "1.0.2.3"; }
+	const char *GetDate(){ return __DATE__; }
+	const char *GetLogTag(){ return "L4DToolZ"; }
 
-	static void *GetCookie(){ return cookie_ptr; }
+	static void *GetCookie(){ return (uint)cookie_ptr&0xF?0:cookie_ptr; }
 	static void *GetSv(){ return sv_ptr; }
 
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);

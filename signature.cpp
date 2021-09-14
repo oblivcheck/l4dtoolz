@@ -17,10 +17,10 @@
 #define SIGN_OFFSET_BYTE	1
 
 #ifndef WIN32
-static void lock_region(void *addr, unsigned int sign_len, int sign_off, bool lock){
-	unsigned int u_addr = (unsigned int)addr;
-	unsigned int all_adr = (u_addr+sign_off)&~(sysconf(_SC_PAGESIZE)-1);
-	unsigned int all_size = u_addr-all_adr+sign_len;
+static void lock_region(void *addr, uint sign_len, int sign_off, bool lock){
+	uint u_addr = (uint)addr;
+	uint all_adr = (u_addr+sign_off)&~(sysconf(_SC_PAGESIZE)-1);
+	uint all_size = u_addr-all_adr+sign_len;
 	if(lock){
 		mlock((void *)all_adr, all_size);
 		mprotect((void *)all_adr, all_size, PROT_READ|PROT_WRITE|PROT_EXEC);
@@ -35,8 +35,8 @@ void *find_signature(const char *mask, struct base_addr_t *base_addr, int pure){
 	char *pBasePtr = (char *)base_addr->addr;
 	char *pEndPtr = pBasePtr+base_addr->len-(int)mask[SIGN_LEN_BYTE];
 #ifndef WIN32
-	char *all_adr = (char *)((unsigned int)pBasePtr&~(sysconf(_SC_PAGESIZE)-1));
-	unsigned int size = pEndPtr-all_adr;
+	char *all_adr = (char *)((uint)pBasePtr&~(sysconf(_SC_PAGESIZE)-1));
+	uint size = pEndPtr-all_adr;
 	mlock(all_adr, size);
 #endif
 	int i;
@@ -85,7 +85,7 @@ void *resolveSymbol(void *addr, const char *symbol){
 typedef struct{
 	const char *fname;
 	void *baddr;
-	unsigned int blen;
+	uint blen;
 } v_data;
 
 static int callback(struct dl_phdr_info *info, size_t size, void *data){
@@ -133,10 +133,10 @@ void find_base_from_list(const char *name[], struct base_addr_t *base_addr){
 
 void write_signature(void *addr, const void *signature){
 	if(!addr || !signature) return;
-	unsigned int sign_len = ((unsigned char *)signature)[SIGN_LEN_BYTE];
+	uint sign_len = ((unsigned char *)signature)[SIGN_LEN_BYTE];
 	int sign_off = ((char *)signature)[SIGN_OFFSET_BYTE];
-	void *src = (void *)((unsigned int)signature+SIGN_HEADER_LEN);
-	void *dst = (void *)((unsigned int)addr+sign_off);
+	void *src = (void *)((uint)signature+SIGN_HEADER_LEN);
+	void *dst = (void *)((uint)addr+sign_off);
 #ifdef WIN32
 	HANDLE h_process = GetCurrentProcess();
 	WriteProcessMemory(h_process, dst, src, sign_len, NULL);
@@ -149,10 +149,10 @@ void write_signature(void *addr, const void *signature){
 }
 
 static void read_signature(void *addr, void *signature){
-	unsigned int sign_len = ((unsigned char *)signature)[SIGN_LEN_BYTE];
+	uint sign_len = ((unsigned char *)signature)[SIGN_LEN_BYTE];
 	int sign_off = ((char *)signature)[SIGN_OFFSET_BYTE];
-	void *src = (void *)((unsigned int)addr+sign_off);
-	void *dst = (void *)((unsigned int)signature+SIGN_HEADER_LEN);
+	void *src = (void *)((uint)addr+sign_off);
+	void *dst = (void *)((uint)signature+SIGN_HEADER_LEN);
 #ifdef WIN32
 	HANDLE h_process = GetCurrentProcess();
 	ReadProcessMemory(h_process, src, dst, sign_len, NULL);
@@ -178,10 +178,10 @@ void safe_free(void *addr, void *&signature){
 	signature = NULL;
 }
 
-unsigned int get_offset(int s, ...){
+uint get_offset(int s, ...){
 	va_list vl;
 	va_start(vl, s);
-	unsigned int offset = va_arg(vl, int);
+	uint offset = va_arg(vl, int);
 	va_end(vl);
 	return offset;
 }
