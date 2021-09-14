@@ -23,8 +23,11 @@ void *l4dtoolz::players_running_ptr = NULL;
 void *l4dtoolz::players_running_org = NULL;
 void *l4dtoolz::players_range_ptr = NULL;
 void *l4dtoolz::players_range_org = NULL;
+void *l4dtoolz::packet_ptr = NULL;
+void *l4dtoolz::packet_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
+ConVar sv_antiddos("sv_antiddos", "0", 0, "Anti DDOS attack", true, 0, true, 1, l4dtoolz::OnChangePacketcheck);
 
 void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
@@ -51,6 +54,45 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 		write_signature(info_players_ptr, info_players_org);
 		if(lobby_match_ptr) write_signature(lobby_match_ptr, lobby_match_org);
 	}
+}
+
+void ProcessHook(){
+#ifdef WIN32
+	__asm{
+		call $+5 // hook
+		test al, al
+		jz drop
+		call $+5 // restore
+		jmp $+5
+	drop:
+		ret
+	}
+#else
+	__asm(
+		"call 0\n" // +1
+		"test %al, %al\n"
+		"jz drop\n"
+		"call 0\n" // +9
+		"jmp 0\n" // +15
+	"drop:\n"
+	);
+#endif
+}
+bool l4dtoolz::CheckPacket(uint, int, char *p){
+	Msg("recv %.8lx %.8lx\n", *p, *(p+4));
+	// blablabla...
+	return true;
+}
+void l4dtoolz::OnChangePacketcheck(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+	if(!packet_ptr || (uint)packet_ptr&0xF){
+		Msg("packet_ptr init error\n");
+		return;
+	}
+	if(new_value) write_signature(packet_ptr, packet_new);
+	else write_signature(packet_ptr, packet_org);
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
@@ -130,6 +172,23 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 			}
 		}
 	}
+	if(!packet_ptr){
+		packet_ptr = (void *)((uint)find_signature(packet, &base_addr, 0)+packet_off);
+		get_original_signature(packet_ptr, packet_new, packet_org);
+	#ifdef WIN32
+		uint ptr = (uint)&ProcessHook+3;
+	#else
+		uint ptr = (uint)&ProcessHook;
+	#endif
+		unsigned char call[6] = {0x04, 0x01};
+		*(uint *)(call+2) = (uint)&CheckPacket-ptr-5;
+		write_signature((void *)ptr, call);
+		write_signature((void *)(ptr+9), packet_org);
+		unsigned char jmp[6] = {0x04, 0x0F};
+		*(uint *)(jmp+2) = (uint)packet_ptr-ptr-9-5;
+		write_signature((void *)ptr, jmp);
+		*(uint *)(packet_new+3) = ptr-(uint)packet_ptr-5;
+	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
@@ -139,5 +198,6 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	safe_free(slots_check_ptr, slots_check_org);
 	safe_free(players_running_ptr, players_running_org);
 	safe_free(players_range_ptr, players_range_org);
+	safe_free(packet_ptr, packet_org);
 	return true;
 }

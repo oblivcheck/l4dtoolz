@@ -25,4 +25,8 @@ const char *players_range_new = "\x06\x00\xB8\x1F\x00\x00\x00\x90";
 
 const char *players_running = "\x0A\x8B\xE5\x5D\xC3\x8B\x80\x0C\x04\x00\x00";
 const char *players_running_new = "\x01\xF0\xEB";
+
+const char *packet = "\x06\x8B\x7D\x08\x8D\x34\xBF";
+const int packet_off = -6;
+unsigned char packet_new[] = {0x05, 0x00, 0xE9, 0x3C, 0x3C, 0x3C, 0x3C};
 #endif //_INCLUDE_L4D2_SIGNATURE_WIN32_

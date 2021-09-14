@@ -22,7 +22,10 @@ public:
 	static void *GetSv(){ return sv_ptr; }
 
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnChangePacketcheck(IConVar *var, const char *pOldValue, float flOldValue);
 private:
+	static bool CheckPacket(uint, int, char *p);
+
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
@@ -37,6 +40,8 @@ private:
 	static void *players_running_org;
 	static void *players_range_ptr;
 	static void *players_range_org;
+	static void *packet_ptr;
+	static void *packet_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();
