@@ -26,7 +26,7 @@ void *l4dtoolz::players_range_org = NULL;
 void *l4dtoolz::packet_ptr = NULL;
 void *l4dtoolz::packet_org = NULL;
 
-ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 32, l4dtoolz::OnChangeMaxplayers);
+ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMaxplayers);
 ConVar sv_antiddos("sv_antiddos", "0", 0, "Anti DDOS attack", true, 0, true, 1, l4dtoolz::OnChangePacketcheck);
 
 void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue){
@@ -56,7 +56,7 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 	}
 }
 
-void ProcessHook(){
+void HookFunc(){ // top(5B) only
 #ifdef WIN32
 	__asm{
 		call $+5 // hook
@@ -74,12 +74,12 @@ void ProcessHook(){
 		"jz drop\n"
 		"call 0\n" // +9
 		"jmp 0\n" // +15
-	"drop:\n"
+	"drop:"
 	);
 #endif
 }
-bool l4dtoolz::CheckPacket(uint, int, char *p){
-	Msg("recv %.8lx %.8lx\n", *p, *(p+4));
+bool CheckPacket(uint, int, uint *p){
+	Msg("recv %.8lx %.8lx\n", p[0], p[1]);
 	// blablabla...
 	return true;
 }
@@ -124,19 +124,17 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 #else
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
 #endif
-	struct base_addr_t base_addr;
-	base_addr.addr = NULL;
-	base_addr.len = 0;
+	mem_info base_addr = {NULL, 0};
 
 	find_base_from_list(srv_dll, &base_addr);
 	if(!info_players_ptr){
-		info_players_ptr = find_signature(info_players, &base_addr, 0);
+		info_players_ptr = find_signature(info_players, &base_addr);
 		get_original_signature(info_players_ptr, info_players_new, info_players_org);
 	}
 
 	find_base_from_list(mat_dll, &base_addr);
 	if(!lobby_match_ptr){
-		lobby_match_ptr = find_signature(lobby_match, &base_addr, 1);
+		lobby_match_ptr = find_signature(lobby_match, &base_addr);
 		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
@@ -149,22 +147,22 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		sv_ptr = *(void **)(*(uint *)(*(uint *)engine+off)+sv_off);
 	}
 	find_base_from_list(eng_dll, &base_addr);
-	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((uint)find_signature(cookie, &base_addr, 0)+cookie_off);
+	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((uint)find_signature(cookie, &base_addr)+cookie_off);
 	if(!maxslots_ptr){
-		maxslots_ptr = find_signature(maxslots, &base_addr, 0);
+		maxslots_ptr = find_signature(maxslots, &base_addr);
 		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
 	}
 	if(!slots_check_ptr){
 	#ifdef WIN32
 		slots_check_ptr = maxslots_ptr;
 	#else
-		slots_check_ptr = find_signature(slots_check, &base_addr, 0);
+		slots_check_ptr = find_signature(slots_check, &base_addr);
 	#endif
 		get_original_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
 	if(!players_running_ptr){
-		if((players_running_ptr = find_signature(players_running, &base_addr, 0))){
-			if((players_range_ptr = find_signature(players_range, &base_addr, 0))){
+		if((players_running_ptr = find_signature(players_running, &base_addr))){
+			if((players_range_ptr = find_signature(players_range, &base_addr))){
 				get_original_signature(players_running_ptr, players_running_new, players_running_org);
 				write_signature(players_running_ptr, players_running_new);
 				get_original_signature(players_range_ptr, players_range_new, players_range_org);
@@ -176,16 +174,16 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		packet_ptr = (void *)((uint)find_signature(packet, &base_addr, 0)+packet_off);
 		get_original_signature(packet_ptr, packet_new, packet_org);
 	#ifdef WIN32
-		uint ptr = (uint)&ProcessHook+3;
+		uint ptr = (uint)&HookFunc+3; // push ebp; mov ebp, esp
 	#else
-		uint ptr = (uint)&ProcessHook;
+		uint ptr = (uint)&HookFunc;
 	#endif
-		unsigned char call[6] = {0x04, 0x01};
+		unsigned char call[6] = {0x04, 1};
 		*(uint *)(call+2) = (uint)&CheckPacket-ptr-5;
 		write_signature((void *)ptr, call);
-		write_signature((void *)(ptr+9), packet_org);
-		unsigned char jmp[6] = {0x04, 0x0F};
-		*(uint *)(jmp+2) = (uint)packet_ptr-ptr-9-5;
+		write_signature((void *)(ptr+2+2+5), packet_org);
+		unsigned char jmp[6] = {0x04, 2+2+5+5+1};
+		*(uint *)(jmp+2) = (uint)packet_ptr-ptr-2-2-5-5;
 		write_signature((void *)ptr, jmp);
 		*(uint *)(packet_new+3) = ptr-(uint)packet_ptr-5;
 	}

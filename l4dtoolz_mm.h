@@ -14,7 +14,7 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return ""; }
-	const char *GetVersion(){ return "1.0.2.3"; }
+	const char *GetVersion(){ return "1.0.3"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
@@ -24,8 +24,6 @@ public:
 	static void OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnChangePacketcheck(IConVar *var, const char *pOldValue, float flOldValue);
 private:
-	static bool CheckPacket(uint, int, char *p);
-
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;

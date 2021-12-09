@@ -30,7 +30,7 @@ static void lock_region(void *addr, uint sign_len, int sign_off, bool lock){
 }
 #endif
 
-void *find_signature(const char *mask, struct base_addr_t *base_addr, int pure){
+void *find_signature(const char *mask, mem_info *base_addr, bool pure){
 	if(!base_addr->addr) return NULL;
 	char *pBasePtr = (char *)base_addr->addr;
 	char *pEndPtr = pBasePtr+base_addr->len-(int)mask[SIGN_LEN_BYTE];
@@ -83,20 +83,20 @@ void *resolveSymbol(void *addr, const char *symbol){
 
 #ifndef WIN32
 typedef struct{
-	const char *fname;
-	void *baddr;
-	uint blen;
+	const char *name;
+	mem_info *info;
 } v_data;
 
 static int callback(struct dl_phdr_info *info, size_t size, void *data){
-	if(!info->dlpi_name || !strstr(info->dlpi_name, ((v_data *)data)->fname)) return 0;
-	((v_data *)data)->baddr = (void *)info->dlpi_addr;
-	((v_data *)data)->blen = info->dlpi_phdr[0].p_filesz;
+	v_data *d = (v_data *)data;
+	if(!info->dlpi_name || !strstr(info->dlpi_name, d->name)) return 0;
+	d->info->addr = (void *)info->dlpi_addr;
+	d->info->len = info->dlpi_phdr[0].p_filesz; // p_type=1 p_offset=0
 	return 1;
 }
 #endif
 
-static bool find_base(const char *name, struct base_addr_t *base_addr){
+static bool find_base(const char *name, mem_info *base_addr){
 #ifdef WIN32
 	HANDLE hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
 	if(hModuleSnap==INVALID_HANDLE_VALUE) return false;
@@ -112,18 +112,13 @@ static bool find_base(const char *name, struct base_addr_t *base_addr){
 	}
 	CloseHandle(hModuleSnap);
 #else
-	v_data vdata;
-	vdata.fname = name;
-	if(dl_iterate_phdr(callback, &vdata)){
-		base_addr->addr = vdata.baddr;
-		base_addr->len = vdata.blen;
-		return true;
-	}
+	v_data vdata = {name, base_addr};
+	if(dl_iterate_phdr(callback, &vdata)) return true;
 #endif
 	return false;
 }
 
-void find_base_from_list(const char *name[], struct base_addr_t *base_addr){
+void find_base_from_list(const char *name[], mem_info *base_addr){
 	base_addr->addr = NULL;
 	base_addr->len = 0;
 	if(!name) return;
