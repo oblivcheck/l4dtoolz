@@ -134,7 +134,7 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 
 	find_base_from_list(mat_dll, &base_addr);
 	if(!lobby_match_ptr){
-		lobby_match_ptr = find_signature(lobby_match, &base_addr);
+		lobby_match_ptr = find_signature(lobby_match, &base_addr, true);
 		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
