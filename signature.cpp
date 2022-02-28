@@ -64,16 +64,16 @@ void *find_signature(const char *mask, mem_info *base_addr, bool pure){
 	return NULL;
 }
 
-void *resolveSymbol(void *addr, const char *symbol){
+void *get_func(void *addr, const char *func){
 #ifdef WIN32
-	return GetProcAddress((HMODULE)addr, symbol);
+	return GetProcAddress((HMODULE)addr, func);
 #else
 	void *result = NULL;
 	Dl_info info;
 	if(dladdr(addr, &info)){
 		void *handle = dlopen(info.dli_fname, RTLD_NOW);
 		if(handle){
-			result = dlsym(handle, symbol);
+			result = dlsym(handle, func);
 			dlclose(handle);
 		}
 	}
@@ -171,12 +171,4 @@ void safe_free(void *addr, void *&signature){
 	write_signature(addr, signature);
 	free(signature);
 	signature = NULL;
-}
-
-uint get_offset(int s, ...){
-	va_list vl;
-	va_start(vl, s);
-	uint offset = va_arg(vl, int);
-	va_end(vl);
-	return offset;
 }

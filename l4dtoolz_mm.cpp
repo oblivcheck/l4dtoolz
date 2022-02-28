@@ -13,8 +13,8 @@ void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
-void *l4dtoolz::cookie_ptr = NULL;
-void *l4dtoolz::sv_ptr = NULL;
+uint l4dtoolz::cookie_ptr = 0;
+uint l4dtoolz::sv_ptr = 0;
 void *l4dtoolz::maxslots_ptr = NULL;
 void *l4dtoolz::maxslots_org = NULL;
 void *l4dtoolz::slots_check_ptr = NULL;
@@ -96,12 +96,12 @@ void l4dtoolz::OnChangePacketcheck(IConVar *var, const char *pOldValue, float fl
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
-	void *cookie = l4dtoolz::GetCookie();
+	auto cookie = (void (*)(void *, unsigned long long, const char *))l4dtoolz::GetCookie();
 	if(!cookie){
 		Msg("cookie_ptr init error\n");
 		return;
 	}
-	((void (*)(void *, unsigned long long, const char *))cookie)(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
+	cookie(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
 	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 }
 
@@ -138,16 +138,18 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
-	if(!sv_ptr){
-	#ifdef WIN32
-		uint off = *(uint *)(get_offset(0, &IVEngineServer::GetPlayerInfo)+4);
-	#else
-		uint off = get_offset(0, &IVEngineServer::GetPlayerInfo)-1;
-	#endif
-		sv_ptr = *(void **)(*(uint *)(*(uint *)engine+off)+sv_off);
-	}
 	find_base_from_list(eng_dll, &base_addr);
-	if(sv_ptr && !cookie_ptr) cookie_ptr = (void *)((uint)find_signature(cookie, &base_addr)+cookie_off);
+	if(!sv_ptr){
+		auto inf = (void *(*)(const char *, int *))get_func(base_addr.addr, "CreateInterface");
+		if(inf){
+			uint **net = (uint **)inf("INETSUPPORT_001", NULL);
+			if(net){
+				uint func = net[0][8];
+				sv_ptr = *(uint *)(func+sv_off);
+				cookie_ptr = (func+cookie_off+5-1)+*(int *)(func+cookie_off);
+			}
+		}
+	}
 	if(!maxslots_ptr){
 		maxslots_ptr = find_signature(maxslots, &base_addr);
 		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
