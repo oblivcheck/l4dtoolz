@@ -11,8 +11,8 @@ unsigned char info_players_new[] = {0x06, 0xBA, 0xB8, '*', 0x00, 0x00, 0x00, 0xC
 const char *lobby_match = "\x06\xB8\x08\x00\x00\x00\xC3";
 unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 
-const uint sv_off = 0x11;
-const uint cookie_off = 0x16;
+#define sv_off     0x11
+#define cookie_off 0x16
 
 const char *maxslots = "\x07\x3B\x86\x80\x01\x00\x00\x7E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};
@@ -24,8 +24,4 @@ const char *players_range_new = "\x06\x00\xB8\x1F\x00\x00\x00\x90";
 
 const char *players_running = "\x0A\x8B\xE5\x5D\xC3\x8B\x80\x0C\x04\x00\x00";
 const char *players_running_new = "\x01\xF0\xEB";
-
-const char *packet = "\x06\x8B\x7D\x08\x8D\x34\xBF";
-const int packet_off = -6;
-unsigned char packet_new[] = {0x05, 0x00, 0xE9, 0x3C, 0x3C, 0x3C, 0x3C};
 #endif //_INCLUDE_L4D2_SIGNATURE_WIN32_

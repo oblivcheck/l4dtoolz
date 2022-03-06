@@ -14,7 +14,7 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return ""; }
-	const char *GetVersion(){ return "1.0.4"; }
+	const char *GetVersion(){ return "1.0.4.1"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
@@ -38,8 +38,6 @@ private:
 	static void *players_running_org;
 	static void *players_range_ptr;
 	static void *players_range_org;
-	static void *packet_ptr;
-	static void *packet_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();

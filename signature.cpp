@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include "signature.h"
 
 #ifdef WIN32
