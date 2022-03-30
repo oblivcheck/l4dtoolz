@@ -13,20 +13,18 @@ void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
-uint l4dtoolz::cookie_ptr = 0;
 uint l4dtoolz::sv_ptr = 0;
+uint l4dtoolz::cookie_ptr = 0;
+uint l4dtoolz::setmax_ptr = 0;
 void *l4dtoolz::maxslots_ptr = NULL;
 void *l4dtoolz::maxslots_org = NULL;
 void *l4dtoolz::slots_check_ptr = NULL;
 void *l4dtoolz::slots_check_org = NULL;
-void *l4dtoolz::players_running_ptr = NULL;
-void *l4dtoolz::players_running_org = NULL;
-void *l4dtoolz::players_range_ptr = NULL;
-void *l4dtoolz::players_range_org = NULL;
+void *l4dtoolz::range_check_ptr = NULL;
+void *l4dtoolz::range_check_org = NULL;
 
-ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMaxplayers);
-
-void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flOldValue){
+ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
+void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
@@ -51,6 +49,23 @@ void l4dtoolz::OnChangeMaxplayers(IConVar *var, const char *pOldValue, float flO
 		write_signature(info_players_ptr, info_players_org);
 		if(lobby_match_ptr) write_signature(lobby_match_ptr, lobby_match_org);
 	}
+}
+
+ConVar sv_setmax("sv_setmax", "18", 0, "Max clients", true, 18, true, 31, l4dtoolz::OnSetMax);
+void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+#ifdef WIN32
+	auto setmax = (void (__thiscall *)(void *, int))l4dtoolz::GetSetmax();
+#else
+	auto setmax = (void (*)(void *, int))l4dtoolz::GetSetmax();
+#endif
+	if(!setmax){
+		Msg("sv_setmax init error\n");
+		return;
+	}
+	setmax(l4dtoolz::GetSv(), new_value);
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
@@ -104,8 +119,14 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 				uint func = net[0][8];
 				sv_ptr = *(uint *)(func+sv_off);
 				cookie_ptr = (func+cookie_off+5-1)+*(int *)(func+cookie_off);
+				setmax_ptr = ((uint **)sv_ptr)[0][setmax_idx];
 			}
 		}
+	}
+	if(!range_check_ptr){
+		range_check_ptr = find_signature(range_check, &base_addr);
+		get_original_signature(range_check_ptr, range_check_new, range_check_org);
+		write_signature(range_check_ptr, range_check_new);
 	}
 	if(!maxslots_ptr){
 		maxslots_ptr = find_signature(maxslots, &base_addr);
@@ -119,16 +140,6 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	#endif
 		get_original_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-	if(!players_running_ptr){
-		if((players_running_ptr = find_signature(players_running, &base_addr))){
-			if((players_range_ptr = find_signature(players_range, &base_addr))){
-				get_original_signature(players_running_ptr, players_running_new, players_running_org);
-				write_signature(players_running_ptr, players_running_new);
-				get_original_signature(players_range_ptr, players_range_new, players_range_org);
-				write_signature(players_range_ptr, players_range_new);
-			}
-		}
-	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
@@ -136,7 +147,6 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	safe_free(lobby_match_ptr, lobby_match_org);
 	safe_free(maxslots_ptr, maxslots_org);
 	safe_free(slots_check_ptr, slots_check_org);
-	safe_free(players_running_ptr, players_running_org);
-	safe_free(players_range_ptr, players_range_org);
+	safe_free(range_check_ptr, range_check_org);
 	return true;
 }
