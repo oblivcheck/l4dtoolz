@@ -51,7 +51,7 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 	}
 }
 
-ConVar sv_setmax("sv_setmax", "18", 0, "Max clients", true, 18, true, 31, l4dtoolz::OnSetMax);
+ConVar sv_setmax("sv_setmax", "18", 0, "Max clients", true, 18, true, 32, l4dtoolz::OnSetMax);
 void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);

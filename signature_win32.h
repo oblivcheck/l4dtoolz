@@ -21,5 +21,5 @@ unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};
 const char *slots_check_new = "\x02\xE2\x90\x90";
 
 const char *range_check = "\x09\x8B\x86\x28\x02\x00\x00\x8B\x4D\x08";
-const char *range_check_new = "\x06\x00\xB8\x1F\x00\x00\x00\x90";
+const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
 #endif //_INCLUDE_L4D2_SIGNATURE_WIN32_

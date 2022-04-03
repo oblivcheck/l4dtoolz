@@ -7,10 +7,10 @@ typedef struct{
 	uint len;
 } mem_info;
 
-void *find_signature(const char *mask, mem_info *base_addr, bool pure = false);
 void *get_func(void *addr, const char *func);
 void find_base_from_list(const char *name[], mem_info *base_addr);
-void write_signature(void *addr, const void *signature);
-void get_original_signature(void *offset, const void *new_sig, void *&org_sig);
-void safe_free(void *addr, void *&signature);
+void *find_signature(const char *mask, mem_info *base_addr, bool pure = false);
+void get_original_signature(void *addr, const void *new_sign, void *&org_sign);
+void write_signature(void *addr, const void *sign);
+void safe_free(void *addr, void *&sign);
 #endif //_INCLUDE_SIGNATURE_

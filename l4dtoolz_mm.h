@@ -16,7 +16,7 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return ""; }
-	const char *GetVersion(){ return "1.0.5"; }
+	const char *GetVersion(){ return "1.0.6"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
