@@ -96,23 +96,23 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 #else
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
 #endif
-	mem_info base_addr = {NULL, 0};
+	mem_info base = {NULL, 0};
 
-	find_base_from_list(srv_dll, &base_addr);
+	find_base_from_list(srv_dll, &base);
 	if(!info_players_ptr){
-		info_players_ptr = find_signature(info_players, &base_addr);
-		get_original_signature(info_players_ptr, info_players_new, info_players_org);
+		info_players_ptr = find_signature(info_players, &base);
+		read_signature(info_players_ptr, info_players_new, info_players_org);
 	}
 
-	find_base_from_list(mat_dll, &base_addr);
+	find_base_from_list(mat_dll, &base);
 	if(!lobby_match_ptr){
-		lobby_match_ptr = find_signature(lobby_match, &base_addr, true);
-		get_original_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
+		lobby_match_ptr = find_signature(lobby_match, &base, true);
+		read_signature(lobby_match_ptr, lobby_match_new, lobby_match_org);
 	}
 
-	find_base_from_list(eng_dll, &base_addr);
+	find_base_from_list(eng_dll, &base);
 	if(!sv_ptr){
-		auto inf = (void *(*)(const char *, int *))get_func(base_addr.addr, "CreateInterface");
+		auto inf = (void *(*)(const char *, int *))get_func(base.addr, "CreateInterface");
 		if(inf){
 			uint **net = (uint **)inf("INETSUPPORT_001", NULL);
 			if(net){
@@ -124,29 +124,29 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		}
 	}
 	if(!range_check_ptr){
-		range_check_ptr = find_signature(range_check, &base_addr);
-		get_original_signature(range_check_ptr, range_check_new, range_check_org);
+		range_check_ptr = find_signature(range_check, &base);
+		read_signature(range_check_ptr, range_check_new, range_check_org);
 		write_signature(range_check_ptr, range_check_new);
 	}
 	if(!maxslots_ptr){
-		maxslots_ptr = find_signature(maxslots, &base_addr);
-		get_original_signature(maxslots_ptr, maxslots_new, maxslots_org);
+		maxslots_ptr = find_signature(maxslots, &base);
+		read_signature(maxslots_ptr, maxslots_new, maxslots_org);
 	}
 	if(!slots_check_ptr){
 	#ifdef WIN32
 		slots_check_ptr = maxslots_ptr;
 	#else
-		slots_check_ptr = find_signature(slots_check, &base_addr);
+		slots_check_ptr = find_signature(slots_check, &base);
 	#endif
-		get_original_signature(slots_check_ptr, slots_check_new, slots_check_org);
+		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
-	safe_free(info_players_ptr, info_players_org);
-	safe_free(lobby_match_ptr, lobby_match_org);
-	safe_free(maxslots_ptr, maxslots_org);
-	safe_free(slots_check_ptr, slots_check_org);
-	safe_free(range_check_ptr, range_check_org);
+	free_signature(info_players_ptr, info_players_org);
+	free_signature(lobby_match_ptr, lobby_match_org);
+	free_signature(maxslots_ptr, maxslots_org);
+	free_signature(slots_check_ptr, slots_check_org);
+	free_signature(range_check_ptr, range_check_org);
 	return true;
 }
