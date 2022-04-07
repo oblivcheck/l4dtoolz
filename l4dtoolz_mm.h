@@ -4,7 +4,7 @@
 #include <ISmmPlugin.h>
 #include "signature.h"
 
-#define CHECKPTR(PTR) PTR&0xF?NULL:(void *)PTR;
+#define CHECKPTR(PTR)	PTR&0xF?NULL:(void *)PTR;
 
 class l4dtoolz:public ISmmPlugin{
 public:
@@ -16,7 +16,7 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return ""; }
-	const char *GetVersion(){ return "1.0.6"; }
+	const char *GetVersion(){ return "1.1.0"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
@@ -32,6 +32,7 @@ private:
 	static void *lobby_match_org;
 	static uint sv_ptr;
 	static uint cookie_ptr;
+	static float *tick_ptr;
 	static uint setmax_ptr;
 	static void *maxslots_ptr;
 	static void *maxslots_org;
@@ -39,6 +40,9 @@ private:
 	static void *slots_check_org;
 	static void *range_check_ptr;
 	static void *range_check_org;
+	static void *rate_check_ptr;
+	static void *rate_check_org;
+	static void *rate_set_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();

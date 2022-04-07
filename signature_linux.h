@@ -11,9 +11,10 @@ unsigned char info_players_new[] = {0x06, 0xF5, 0xB8, '*', 0x00, 0x00, 0x00, 0xC
 const char *lobby_match = "\x06\x55\xB8\x08\x00\x00\x00";
 unsigned char lobby_match_new[] = {0x01, 0x02, '*'};
 
-#define sv_off     0x17
-#define cookie_off 0x24
-#define setmax_idx 0x26
+#define sv_off		0x17
+#define cookie_off	0x24
+#define state_off	0x0A
+#define setmax_idx	0x26
 
 const char *maxslots = "\x08\x3B\x9F\x7C\x01\x00\x00\x0F\x8E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xFB, '*', 0x90, 0x90, 0x90};
@@ -23,4 +24,8 @@ const char *slots_check_new = "\x06\x0B\xBE\x01\x00\x00\x00\x90";
 
 const char *range_check = "\x0C\x8B\x83\xC3\xC3\x00\x00\x39\xD0\x7C\x0B\x8B\x83";
 const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
+
+const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
+const char *rate_check_new = "\x01\x08\xEB";
+unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
 #endif //_INCLUDE_L4D2_SIGNATURE_LINUX_

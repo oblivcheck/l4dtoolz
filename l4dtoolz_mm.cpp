@@ -15,6 +15,7 @@ void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
 uint l4dtoolz::sv_ptr = 0;
 uint l4dtoolz::cookie_ptr = 0;
+float *l4dtoolz::tick_ptr = 0;
 uint l4dtoolz::setmax_ptr = 0;
 void *l4dtoolz::maxslots_ptr = NULL;
 void *l4dtoolz::maxslots_org = NULL;
@@ -22,6 +23,9 @@ void *l4dtoolz::slots_check_ptr = NULL;
 void *l4dtoolz::slots_check_org = NULL;
 void *l4dtoolz::range_check_ptr = NULL;
 void *l4dtoolz::range_check_org = NULL;
+void *l4dtoolz::rate_check_ptr = NULL;
+void *l4dtoolz::rate_check_org = NULL;
+void *l4dtoolz::rate_set_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
@@ -90,12 +94,10 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	PLUGIN_SAVEVARS();
 	GET_V_IFACE_CURRENT(GetEngineFactory, engine, IVEngineServer, INTERFACEVERSION_VENGINESERVER);
 	GET_V_IFACE_CURRENT(GetEngineFactory, icvar, ICvar, CVAR_INTERFACE_VERSION);
-#if SOURCE_ENGINE >= SE_ORANGEBOX
+
 	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
-#else
-	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
-#endif
+	int tickrate = CommandLine()->ParmValue("-tickrate", 0);
 	mem_info base = {NULL, 0};
 
 	find_base_from_list(srv_dll, &base);
@@ -111,15 +113,22 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	}
 
 	find_base_from_list(eng_dll, &base);
-	if(!sv_ptr){
-		auto inf = (void *(*)(const char *, int *))get_func(base.addr, "CreateInterface");
-		if(inf){
+	auto inf = (void *(*)(const char *, int *))get_func(base.addr, "CreateInterface");
+	if(inf){
+		if(!sv_ptr){
 			uint **net = (uint **)inf("INETSUPPORT_001", NULL);
 			if(net){
 				uint func = net[0][8];
 				sv_ptr = *(uint *)(func+sv_off);
 				cookie_ptr = (func+cookie_off+5-1)+*(int *)(func+cookie_off);
 				setmax_ptr = ((uint **)sv_ptr)[0][setmax_idx];
+			}
+		}
+		if(tickrate && !tick_ptr){
+			uint **ves = (uint **)inf("VEngineServer022", NULL);
+			if(ves){
+				tick_ptr = (float *)(*(uint *)(ves[0][80]+state_off)+8);
+				*tick_ptr = 1.0/tickrate;
 			}
 		}
 	}
@@ -140,6 +149,21 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	#endif
 		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
+	if(tickrate && !rate_check_ptr){
+		rate_check_ptr = find_signature(rate_check, &base);
+		read_signature(rate_check_ptr, rate_check_new, rate_check_org);
+		write_signature(rate_check_ptr, rate_check_new);
+		read_signature(rate_check_ptr, rate_set_new, rate_set_org);
+	#ifdef WIN32
+		*(uint *)&rate_set_new[3] = tickrate*1000;
+	#else
+		*(uint *)&rate_set_new[2] = tickrate*1000;
+	#endif
+		write_signature(rate_check_ptr, rate_set_new); // sd
+		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate); // rq
+		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
+		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
+	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
@@ -148,5 +172,7 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	free_signature(maxslots_ptr, maxslots_org);
 	free_signature(slots_check_ptr, slots_check_org);
 	free_signature(range_check_ptr, range_check_org);
+	free_signature(rate_check_ptr, rate_check_org);
+	free_signature(rate_check_ptr, rate_set_org);
 	return true;
 }
