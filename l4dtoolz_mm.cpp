@@ -9,14 +9,16 @@ l4dtoolz g_l4dtoolz;
 IVEngineServer *engine = NULL;
 ICvar *icvar = NULL;
 
+void *l4dtoolz::sv_ptr = NULL;
+uint l4dtoolz::cookie_ptr = 0;
+float *l4dtoolz::tick_ptr = 0;
+uint l4dtoolz::setmax_ptr = 0;
+void *l4dtoolz::steam3_ptr = NULL;
+uint l4dtoolz::authcb_ptr = 0;
 void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
-uint l4dtoolz::sv_ptr = 0;
-uint l4dtoolz::cookie_ptr = 0;
-float *l4dtoolz::tick_ptr = 0;
-uint l4dtoolz::setmax_ptr = 0;
 void *l4dtoolz::maxslots_ptr = NULL;
 void *l4dtoolz::maxslots_org = NULL;
 void *l4dtoolz::slots_check_ptr = NULL;
@@ -33,7 +35,7 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
 	if(!slots_check_ptr || !maxslots_ptr || !info_players_ptr){
-		Msg("sv_maxplayers init error\n");
+		Msg("[L4DToolZ] sv_maxplayers init error\n");
 		return;
 	}
 	if(new_value>=0){
@@ -42,7 +44,7 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 			lobby_match_new[2] = (unsigned char)new_value;
 			write_signature(lobby_match_ptr, lobby_match_new);
 		}else{
-			Msg("lobby_match_ptr init error\n");
+			Msg("[L4DToolZ] lobby_match init error\n");
 		}
 		write_signature(maxslots_ptr, maxslots_new);
 		write_signature(slots_check_ptr, slots_check_new);
@@ -60,22 +62,45 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-#ifdef WIN32
-	auto setmax = (void (__thiscall *)(void *, int))l4dtoolz::GetSetmax();
-#else
-	auto setmax = (void (*)(void *, int))l4dtoolz::GetSetmax();
-#endif
-	if(!setmax){
-		Msg("sv_setmax init error\n");
+	if(setmax_ptr&0xF){
+		Msg("[L4DToolZ] sv_setmax init error\n");
 		return;
 	}
-	setmax(l4dtoolz::GetSv(), new_value);
+#ifdef WIN32
+	auto setmax = (void (__thiscall *)(void *, int))setmax_ptr;
+#else
+	auto setmax = (void (*)(void *, int))setmax_ptr;
+#endif
+	setmax(sv_ptr, new_value);
+}
+
+void l4dtoolz::OnAuth(void *p, uint *rsp){
+	if(rsp[2]==6){
+		Msg("[L4DToolZ] received 'No Steam logon', blocking...\n");
+		return;
+	}
+	((void (*)(void *, uint *))authcb_ptr)(p, rsp);
+}
+
+ConVar sv_logon_kick("sv_logon_kick", "1", 0, "Prevents 'No Steam logon' kick", true, 0, true, 1, l4dtoolz::OnLogonKick);
+void l4dtoolz::OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+	if(!steam3_ptr){
+		Msg("[L4DToolZ] sv_logon_kick init error\n");
+		return;
+	}
+	uint *ptr = (uint *)((uint)steam3_ptr+ticket_off);
+	if(!authcb_ptr) authcb_ptr = *ptr;
+	if(new_value) *ptr = authcb_ptr;
+	else *ptr = (uint)&OnAuth;
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 	auto cookie = (void (*)(void *, unsigned long long, const char *))l4dtoolz::GetCookie();
 	if(!cookie){
-		Msg("cookie_ptr init error\n");
+		Msg("[L4DToolZ] sv_unreserved init error\n");
 		return;
 	}
 	cookie(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
@@ -117,13 +142,17 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	if(inf){
 		if(!sv_ptr){
 			uint **net = (uint **)inf("INETSUPPORT_001", NULL);
-			if(net){
-				uint func = net[0][8];
-				sv_ptr = *(uint *)(func+sv_off);
-				cookie_ptr = (func+cookie_off+5-1)+*(int *)(func+cookie_off);
-				setmax_ptr = ((uint **)sv_ptr)[0][setmax_idx];
-			}
+			if(!net) goto fail_sv;
+			uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
+			if((uint)p_sv&0xF) goto fail_sv;
+			sv_ptr = (void *)p_sv;
+			uint p1 = func+cookie_off, p2 = p_sv[0][steam3_idx]+steam3_off;
+			cookie_ptr = READCALL(p1);
+			setmax_ptr = p_sv[0][setmax_idx];
+			auto sfunc = (void *(*)(void))READCALL(p2);
+			if(!((uint)sfunc&0xF)) steam3_ptr = sfunc();
 		}
+	fail_sv:
 		if(tickrate && !tick_ptr){
 			uint **ves = (uint **)inf("VEngineServer022", NULL);
 			if(ves){
@@ -167,6 +196,8 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
+	engine->ServerCommand("sv_logon_kick 1\n");
+	engine->ServerExecute();
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
 	free_signature(maxslots_ptr, maxslots_org);

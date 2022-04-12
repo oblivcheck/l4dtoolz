@@ -4,36 +4,40 @@
 #include <ISmmPlugin.h>
 #include "signature.h"
 
-#define CHECKPTR(PTR)	PTR&0xF?NULL:(void *)PTR;
+#define CHECKPTR(PTR) (PTR&0xF?NULL:(void *)PTR)
+#define READCALL(PTR) ((PTR+5-1)+*(int *)PTR)
 
 class l4dtoolz:public ISmmPlugin{
 public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 	bool Unload(char *error, size_t maxlen);
 
-	const char *GetAuthor(){ return "Ivailosp, lakwsh"; }
+	const char *GetAuthor(){ return "lakwsh, Ivailosp"; }
 	const char *GetName(){ return "L4DToolZ"; }
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
-	const char *GetLicense(){ return ""; }
-	const char *GetVersion(){ return "1.1.0"; }
+	const char *GetLicense(){ return "GPLv3"; }
+	const char *GetVersion(){ return "1.1.1"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
-	static void *GetSv(){ return CHECKPTR(sv_ptr); }
+	static void *GetSv(){ return sv_ptr; }
 	static void *GetCookie(){ return CHECKPTR(cookie_ptr); }
-	static void *GetSetmax(){ return CHECKPTR(setmax_ptr); }
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnAuth(void *p, uint *rsp);
+	static void OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue);
 private:
+	static void *sv_ptr;
+	static uint cookie_ptr;
+	static float *tick_ptr;
+	static uint setmax_ptr;
+	static void *steam3_ptr;
+	static uint authcb_ptr;
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
 	static void *lobby_match_org;
-	static uint sv_ptr;
-	static uint cookie_ptr;
-	static float *tick_ptr;
-	static uint setmax_ptr;
 	static void *maxslots_ptr;
 	static void *maxslots_org;
 	static void *slots_check_ptr;
