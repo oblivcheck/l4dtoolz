@@ -17,15 +17,15 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return "GPLv3"; }
-	const char *GetVersion(){ return "1.1.1"; }
+	const char *GetVersion(){ return "1.1.2"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
 	static void *GetSv(){ return sv_ptr; }
 	static void *GetCookie(){ return CHECKPTR(cookie_ptr); }
+	static uint GetAuthCb(){ return authcb_ptr; }
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnAuth(void *p, uint *rsp);
 	static void OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue);
 private:
 	static void *sv_ptr;

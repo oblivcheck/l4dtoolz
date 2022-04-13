@@ -17,7 +17,7 @@ unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 #define setmax_idx	0x25
 #define steam3_idx	0x40
 #define steam3_off	0x0D
-#define ticket_off	0x90
+#define ticket_off	0x80
 
 const char *maxslots = "\x07\x3B\x86\x80\x01\x00\x00\x7E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};

@@ -74,12 +74,32 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	setmax(sv_ptr, new_value);
 }
 
-void l4dtoolz::OnAuth(void *p, uint *rsp){
+bool OnAuth_check(uint *rsp){
 	if(rsp[2]==6){
 		Msg("[L4DToolZ] received 'No Steam logon', blocking...\n");
-		return;
+		return true;
 	}
-	((void (*)(void *, uint *))authcb_ptr)(p, rsp);
+	return false;
+}
+#ifdef WIN32
+__declspec(naked) void OnAuth(){
+	__asm{
+		push ecx // saves(+4)
+		push [esp+8]
+		call OnAuth_check
+		test eax, eax
+		pop eax
+		pop ecx // restore p
+		jz skip
+		retn 4
+	skip:
+		call l4dtoolz::GetAuthCb
+		jmp eax
+	}
+#else
+void OnAuth(void *p, uint *rsp){
+	if(OnAuth_check(rsp)) ((void (*)(void *, uint *))l4dtoolz::GetAuthCb())(p, rsp);
+#endif
 }
 
 ConVar sv_logon_kick("sv_logon_kick", "1", 0, "Prevents 'No Steam logon' kick", true, 0, true, 1, l4dtoolz::OnLogonKick);
@@ -88,11 +108,15 @@ void l4dtoolz::OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
 	if(!steam3_ptr){
+	kick_init_err:
 		Msg("[L4DToolZ] sv_logon_kick init error\n");
 		return;
 	}
 	uint *ptr = (uint *)((uint)steam3_ptr+ticket_off);
-	if(!authcb_ptr) authcb_ptr = *ptr;
+	if(!authcb_ptr){
+		if(!CHECKPTR(*ptr)) goto kick_init_err;
+		authcb_ptr = *ptr;
+	}
 	if(new_value) *ptr = authcb_ptr;
 	else *ptr = (uint)&OnAuth;
 }
@@ -196,8 +220,7 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
-	engine->ServerCommand("sv_logon_kick 1\n");
-	engine->ServerExecute();
+	if(authcb_ptr) *(uint *)((uint)steam3_ptr+ticket_off) = authcb_ptr;
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
 	free_signature(maxslots_ptr, maxslots_org);
