@@ -74,22 +74,20 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	setmax(sv_ptr, new_value);
 }
 
-bool OnAuth_check(uint *rsp){
-	if(rsp[2]==6){
-		Msg("[L4DToolZ] received 'No Steam logon', blocking...\n");
-		return true;
-	}
-	return false;
+int OnAuth_check(uint *rsp){ // bool(ptr)
+	if(rsp[2]!=6) return 0;
+	Msg("[L4DToolZ] received 'No Steam logon', blocking...\n");
+	return 1;
 }
 #ifdef WIN32
 __declspec(naked) void OnAuth(){
 	__asm{
-		push ecx // saves(+4)
+		push ecx // save(+4)
 		push [esp+8]
 		call OnAuth_check
 		test eax, eax
-		pop eax
-		pop ecx // restore p
+		pop ecx
+		pop ecx // restore
 		jz skip
 		retn 4
 	skip:
@@ -98,7 +96,7 @@ __declspec(naked) void OnAuth(){
 	}
 #else
 void OnAuth(void *p, uint *rsp){
-	if(OnAuth_check(rsp)) ((void (*)(void *, uint *))l4dtoolz::GetAuthCb())(p, rsp);
+	if(!OnAuth_check(rsp)) ((void (*)(void *, uint *))l4dtoolz::GetAuthCb())(p, rsp);
 #endif
 }
 
