@@ -74,10 +74,14 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	setmax(sv_ptr, new_value);
 }
 
+uint pkick_lev = 0;
 int OnAuth_check(uint *rsp){ // bool(ptr)
-	if(rsp[2]!=6) return 0;
-	Msg("[L4DToolZ] received 'No Steam logon', blocking...\n");
-	return 1;
+	uint code = rsp[2];
+	if(code==6 || (code==1 && pkick_lev==2)){
+		Msg("[L4DToolZ] received 'No Steam logon'(code %u) from %llu, blocking...\n", code, *(unsigned long long *)rsp);
+		return 1;
+	}
+	return 0;
 }
 #ifdef WIN32
 __declspec(naked) void OnAuth(){
@@ -100,14 +104,14 @@ void OnAuth(void *p, uint *rsp){
 #endif
 }
 
-ConVar sv_logon_kick("sv_logon_kick", "1", 0, "Prevents 'No Steam logon' kick", true, 0, true, 1, l4dtoolz::OnLogonKick);
+ConVar sv_pkick_lev("sv_pkick_lev", "0", 0, "Prevents 'No Steam logon' kick", true, 0, true, 2, l4dtoolz::OnLogonKick);
 void l4dtoolz::OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
 	if(!steam3_ptr){
 	kick_init_err:
-		Msg("[L4DToolZ] sv_logon_kick init error\n");
+		Msg("[L4DToolZ] sv_pkick_lev init error\n");
 		return;
 	}
 	uint *ptr = (uint *)((uint)steam3_ptr+ticket_off);
@@ -115,6 +119,7 @@ void l4dtoolz::OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue
 		if(!CHECKPTR(*ptr)) goto kick_init_err;
 		authcb_ptr = *ptr;
 	}
+	pkick_lev = new_value;
 	if(new_value) *ptr = authcb_ptr;
 	else *ptr = (uint)&OnAuth;
 }
