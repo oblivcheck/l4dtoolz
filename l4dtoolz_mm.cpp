@@ -120,7 +120,7 @@ void l4dtoolz::OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue
 		authcb_ptr = *ptr;
 	}
 	pkick_lev = new_value;
-	if(new_value) *ptr = authcb_ptr;
+	if(!new_value) *ptr = authcb_ptr;
 	else *ptr = (uint)&OnAuth;
 }
 
