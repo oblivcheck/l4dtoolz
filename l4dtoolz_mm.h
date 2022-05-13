@@ -17,23 +17,20 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return "GPLv3"; }
-	const char *GetVersion(){ return "1.1.3_fix"; }
+	const char *GetVersion(){ return "1.1.4_beta"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
 	static void *GetSv(){ return sv_ptr; }
 	static void *GetCookie(){ return CHECKPTR(cookie_ptr); }
-	static uint GetAuthCb(){ return authcb_ptr; }
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnLogonKick(IConVar *var, const char *pOldValue, float flOldValue);
 private:
 	static void *sv_ptr;
 	static uint cookie_ptr;
 	static float *tick_ptr;
 	static uint setmax_ptr;
 	static void *steam3_ptr;
-	static uint authcb_ptr;
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
