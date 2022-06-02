@@ -1,5 +1,5 @@
 # 1. 说明
-New: 支持tickrate解锁(即无需安装tickrate_enabler)  
+New: 支持tickrate解锁(请删除tickrate_enabler)  
 移除`sv_force_unreserved`(用处不大且会导致回话不可用问题)  
 **解压到addons文件夹即可,请确保安装了metamod平台**  
 **注意: metamod版本太旧会导致扩展加载失败**
@@ -31,7 +31,12 @@ New: 支持tickrate解锁(即无需安装tickrate_enabler)
 ## 4.1 更安全
 比原版依赖更少签名(寻址方式不同,失效几率低)
 ## 4.2 可动态修改最大玩家数
-原版l4dtoolz最大客户端数为固定值32
+原版l4dtoolz最大客户端数为固定值32(建议在服务器闲置状态下修改)
 ## 4.3 关于tickrate解锁
 效果与tickrate_enabler基本相同,但是寻址方式完全重写  
 理论上可动态修改tick值,但是考虑到稳定性没有实现(而且也没啥必要)
+
+# 5. 相关插件
+## 配套纯净多人插件(可选)
+**注意: 该SourceMod插件专为此版本扩展编写,需要安装SourceMod平台**  
+[功能：自动移除大厅、允许投票设置最大玩家数](https://github.com/lakwsh/l4d2_rmc)

@@ -10,10 +10,10 @@ IVEngineServer *engine = NULL;
 ICvar *icvar = NULL;
 
 void *l4dtoolz::sv_ptr = NULL;
-uint l4dtoolz::cookie_ptr = 0;
-float *l4dtoolz::tick_ptr = 0;
-uint l4dtoolz::setmax_ptr = 0;
-void *l4dtoolz::steam3_ptr = NULL;
+void *l4dtoolz::cookie_ptr = NULL;
+float *l4dtoolz::tick_ptr = NULL;
+void *l4dtoolz::setmax_ptr = NULL;
+uint *l4dtoolz::steam3_ptr = NULL;
 void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
@@ -27,6 +27,8 @@ void *l4dtoolz::range_check_org = NULL;
 void *l4dtoolz::rate_check_ptr = NULL;
 void *l4dtoolz::rate_check_org = NULL;
 void *l4dtoolz::rate_set_org = NULL;
+void *l4dtoolz::steam_bypass_ptr = NULL;
+void *l4dtoolz::steam_bypass_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
@@ -61,7 +63,7 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(setmax_ptr&0xF){
+	if(!setmax_ptr){
 		Msg("[L4DToolZ] sv_setmax init error\n");
 		return;
 	}
@@ -71,6 +73,19 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	auto setmax = (void (*)(void *, int))setmax_ptr;
 #endif
 	setmax(sv_ptr, new_value);
+}
+
+ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", true, 0, true, 1, l4dtoolz::OnBypass);
+void l4dtoolz::OnBypass(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+	if(!steam_bypass_ptr){
+		Msg("[L4DToolZ] sv_steam_bypass init error\n");
+		return;
+	}
+	if(new_value) write_signature(steam_bypass_ptr, steam_bypass_new);
+	else write_signature(steam_bypass_ptr, steam_bypass_org);
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
@@ -119,13 +134,13 @@ bool l4dtoolz::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool
 		uint **net = (uint **)enginf("INETSUPPORT_001", NULL);
 		if(!net) goto fail_sv;
 		uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
-		if((uint)p_sv&0xF) goto fail_sv;
+		if(!CHKPTR(p_sv)) goto fail_sv;
 		sv_ptr = (void *)p_sv;
 		uint p1 = func+cookie_off, p2 = p_sv[0][steam3_idx]+steam3_off;
-		cookie_ptr = READCALL(p1);
-		setmax_ptr = p_sv[0][setmax_idx];
-		auto sfunc = (void *(*)(void))READCALL(p2);
-		if(!((uint)sfunc&0xF)) steam3_ptr = sfunc();
+		cookie_ptr = GETPTR(READCALL(p1));
+		setmax_ptr = GETPTR(p_sv[0][setmax_idx]);
+		auto sfunc = (uint *(*)(void))READCALL(p2);
+		if(CHKPTR(sfunc)) steam3_ptr = sfunc(); // conn
 	}
 fail_sv:
 	if(tickrate && !tick_ptr){
@@ -164,6 +179,10 @@ fail_sv:
 		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
+	if(!steam_bypass_ptr){
+		steam_bypass_ptr = find_signature(steam_bypass, &base);
+		read_signature(steam_bypass_ptr, steam_bypass_new, steam_bypass_org);
+	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
@@ -174,5 +193,6 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	free_signature(range_check_ptr, range_check_org);
 	free_signature(rate_check_ptr, rate_check_org);
 	free_signature(rate_check_ptr, rate_set_org);
+	free_signature(steam_bypass_ptr, steam_bypass_org);
 	return true;
 }

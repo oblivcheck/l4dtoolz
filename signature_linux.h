@@ -30,4 +30,7 @@ const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
 const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
 const char *rate_check_new = "\x01\x08\xEB";
 unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
+
+const char *steam_bypass = "\x06\xFF\x50\x68\x83\xF8\x05";
+const char *steam_bypass_new = "\x03\x03\x31\xC0\x90";
 #endif //_INCLUDE_L4D2_SIGNATURE_LINUX_

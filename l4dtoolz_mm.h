@@ -4,7 +4,8 @@
 #include <ISmmPlugin.h>
 #include "signature.h"
 
-#define CHECKPTR(PTR) (PTR&0xF?NULL:(void *)PTR)
+#define CHKPTR(PTR) ((uint)PTR&0xF?0:1)
+#define GETPTR(PTR) (PTR&0xF?NULL:(void *)PTR)
 #define READCALL(PTR) ((PTR+5-1)+*(int *)PTR)
 
 class l4dtoolz:public ISmmPlugin{
@@ -17,20 +18,21 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return "GPLv3"; }
-	const char *GetVersion(){ return "1.1.4_beta"; }
+	const char *GetVersion(){ return "1.1.4_beta4"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
 	static void *GetSv(){ return sv_ptr; }
-	static void *GetCookie(){ return CHECKPTR(cookie_ptr); }
+	static void *GetCookie(){ return cookie_ptr; }
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnBypass(IConVar *var, const char *pOldValue, float flOldValue);
 private:
 	static void *sv_ptr;
-	static uint cookie_ptr;
+	static void *cookie_ptr;
 	static float *tick_ptr;
-	static uint setmax_ptr;
-	static void *steam3_ptr;
+	static void *setmax_ptr;
+	static uint *steam3_ptr;
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
@@ -44,6 +46,8 @@ private:
 	static void *rate_check_ptr;
 	static void *rate_check_org;
 	static void *rate_set_org;
+	static void *steam_bypass_ptr;
+	static void *steam_bypass_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();
