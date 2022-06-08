@@ -1,7 +1,10 @@
 #ifndef _INCLUDE_SIGNATURE_
 #define _INCLUDE_SIGNATURE_
 
+#ifdef WIN32
 typedef unsigned int uint;
+typedef unsigned long long uint64;
+#endif
 typedef struct{
 	void *addr;
 	uint len;

@@ -126,9 +126,12 @@ void write_signature(void *addr, const void *sign){
 	void *src = (void *)((uint)sign+HEADER_LEN);
 	void *dst = (void *)((uint)addr+((char *)sign)[OFF_BYTE]);
 #ifdef WIN32
+	DWORD old;
+	VirtualProtect(dst, len, PAGE_EXECUTE_READWRITE, &old); // readonly
 	HANDLE h_process = GetCurrentProcess();
 	WriteProcessMemory(h_process, dst, src, len, NULL); // builtin
 	CloseHandle(h_process);
+	VirtualProtect(dst, len, old, &old);
 #else
 	void *pa_addr = (void *)((uint)dst&pmask);
 	uint size = (uint)dst-(uint)pa_addr+len;

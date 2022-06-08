@@ -17,6 +17,7 @@ unsigned char lobby_match_new[] = {0x01, 0x02, '*'};
 #define setmax_idx	0x26
 #define steam3_idx	0x41
 #define steam3_off	0x0D
+#define bypass_off	0x68
 
 const char *maxslots = "\x08\x3B\x9F\x7C\x01\x00\x00\x0F\x8E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xFB, '*', 0x90, 0x90, 0x90};
@@ -30,7 +31,4 @@ const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
 const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
 const char *rate_check_new = "\x01\x08\xEB";
 unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
-
-const char *steam_bypass = "\x06\xFF\x50\x68\x83\xF8\x05";
-const char *steam_bypass_new = "\x03\x03\x31\xC0\x90";
 #endif //_INCLUDE_L4D2_SIGNATURE_LINUX_

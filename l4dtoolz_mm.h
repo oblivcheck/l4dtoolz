@@ -18,7 +18,7 @@ public:
 	const char *GetDescription(){ return ""; }
 	const char *GetURL(){ return "https://github.com/lakwsh/l4dtoolz"; }
 	const char *GetLicense(){ return "GPLv3"; }
-	const char *GetVersion(){ return "1.1.4_beta4"; }
+	const char *GetVersion(){ return "1.1.4_beta5"; }
 	const char *GetDate(){ return __DATE__; }
 	const char *GetLogTag(){ return "L4DToolZ"; }
 
@@ -33,6 +33,8 @@ private:
 	static float *tick_ptr;
 	static void *setmax_ptr;
 	static uint *steam3_ptr;
+	static void *bypass_ptr;
+	static void *bypass_org;
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
@@ -46,8 +48,6 @@ private:
 	static void *rate_check_ptr;
 	static void *rate_check_org;
 	static void *rate_set_org;
-	static void *steam_bypass_ptr;
-	static void *steam_bypass_org;
 };
 extern l4dtoolz g_l4dtoolz;
 PLUGIN_GLOBALVARS();

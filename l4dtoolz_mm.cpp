@@ -14,6 +14,8 @@ void *l4dtoolz::cookie_ptr = NULL;
 float *l4dtoolz::tick_ptr = NULL;
 void *l4dtoolz::setmax_ptr = NULL;
 uint *l4dtoolz::steam3_ptr = NULL;
+void *l4dtoolz::bypass_ptr = NULL;
+void *l4dtoolz::bypass_org = NULL;
 void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
@@ -27,8 +29,6 @@ void *l4dtoolz::range_check_org = NULL;
 void *l4dtoolz::rate_check_ptr = NULL;
 void *l4dtoolz::rate_check_org = NULL;
 void *l4dtoolz::rate_set_org = NULL;
-void *l4dtoolz::steam_bypass_ptr = NULL;
-void *l4dtoolz::steam_bypass_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
@@ -75,21 +75,39 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	setmax(sv_ptr, new_value);
 }
 
+#ifdef WIN32
+int OnAuth(const void *, int, uint64 steamID){
+#else
+int OnAuth(void *, const void *, int, uint64 steamID){
+#endif
+	Msg("[L4DToolZ] %lld connected.\n", steamID);
+	return 0;
+}
+
 ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", true, 0, true, 1, l4dtoolz::OnBypass);
 void l4dtoolz::OnBypass(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(!steam_bypass_ptr){
+	if(!steam3_ptr){
+	fail_bypass:
 		Msg("[L4DToolZ] sv_steam_bypass init error\n");
 		return;
 	}
-	if(new_value) write_signature(steam_bypass_ptr, steam_bypass_new);
-	else write_signature(steam_bypass_ptr, steam_bypass_org);
+	unsigned char bypass_new[6] = {0x04, 0x00};
+	if(!bypass_ptr){
+		auto gsrv = (uint *)steam3_ptr[1];
+		if(!gsrv) goto fail_bypass;
+		bypass_ptr = (void *)(gsrv[0]+bypass_off);
+		*(uint *)&bypass_new[2] = (uint)&OnAuth;
+		read_signature(bypass_ptr, bypass_new, bypass_org);
+	}
+	if(new_value) write_signature(bypass_ptr, bypass_new);
+	else write_signature(bypass_ptr, bypass_org);
 }
 
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
-	auto cookie = (void (*)(void *, unsigned long long, const char *))l4dtoolz::GetCookie();
+	auto cookie = (void (*)(void *, uint64, const char *))l4dtoolz::GetCookie();
 	if(!cookie){
 		Msg("[L4DToolZ] sv_unreserved init error\n");
 		return;
@@ -179,10 +197,6 @@ fail_sv:
 		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
-	if(!steam_bypass_ptr){
-		steam_bypass_ptr = find_signature(steam_bypass, &base);
-		read_signature(steam_bypass_ptr, steam_bypass_new, steam_bypass_org);
-	}
 	return true;
 }
 bool l4dtoolz::Unload(char *error, size_t maxlen){
@@ -193,6 +207,6 @@ bool l4dtoolz::Unload(char *error, size_t maxlen){
 	free_signature(range_check_ptr, range_check_org);
 	free_signature(rate_check_ptr, rate_check_org);
 	free_signature(rate_check_ptr, rate_set_org);
-	free_signature(steam_bypass_ptr, steam_bypass_org);
+	free_signature(bypass_ptr, bypass_org);
 	return true;
 }
