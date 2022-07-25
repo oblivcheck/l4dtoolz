@@ -1,14 +1,12 @@
 # (C)2004-2010 Metamod:Source Development Team
 # Makefile written by David "BAILOPAN" Anderson
 
-GIT_VERSION = $(shell sh -c 'git describe --abbrev=8 --dirty --always')
-
 #####################################
 ### EDIT BELOW FOR OTHER PROJECTS ###
 #####################################
 
-PROJECT = l4dtoolz_mm
-OBJECTS = l4dtoolz_mm.cpp signature.cpp
+PROJECT = l4dtoolz
+OBJECTS = l4dtoolz.cpp signature.cpp
 
 ##############################################
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
@@ -26,7 +24,6 @@ CPP_OSX = clang
 
 ENGINE = left4dead2
 HL2SDK = ../hl2sdk-l4d2
-METAMOD = ../metamod-source/core
 HL2PUB = $(HL2SDK)/public
 INCLUDE += -I$(HL2SDK)/public/game/server
 
@@ -59,7 +56,7 @@ CFLAGS += -std=c++11 -DSE_LEFT4DEAD2=9 -DSOURCE_ENGINE=9 -DL4D2
 LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX)
 
 INCLUDE += -I. -I.. -I$(HL2PUB) -I$(HL2PUB)/engine -I$(HL2PUB)/mathlib -I$(HL2PUB)/vstdlib \
-	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I. -I$(METAMOD) -I$(METAMOD)/sourcehook
+	-I$(HL2PUB)/tier0 -I$(HL2PUB)/tier1 -I.
 
 ################################################
 ### DO NOT EDIT BELOW HERE FOR MOST PROJECTS ###
@@ -126,14 +123,14 @@ all:
 	mkdir -p $(BIN_DIR)
 	ln -sf $(HL2LIB)/$(LIB_PREFIX)vstdlib$(LIB_SUFFIX)
 	ln -sf $(HL2LIB)/$(LIB_PREFIX)tier0$(LIB_SUFFIX)
-	$(MAKE) -f Makefile l4dtoolz_mm
+	$(MAKE) -f Makefile l4dtoolz
 
-l4dtoolz_mm: $(OBJ_BIN)
+l4dtoolz: $(OBJ_BIN)
 	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
 
 default: all
 
 clean:
-	rm -rf $(BIN_DIR)/*.o
-	rm -rf $(BIN_DIR)/$(BINARY)
+	rm -rf $(BIN_DIR)
+	rm *$(LIB_SUFFIX)
 

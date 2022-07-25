@@ -11,13 +11,14 @@ unsigned char info_players_new[] = {0x06, 0xBA, 0xB8, '*', 0x00, 0x00, 0x00, 0xC
 const char *lobby_match = "\x06\xB8\x08\x00\x00\x00\xC3";
 unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 
+#define tick_off	0x24
 #define sv_off		0x11
 #define cookie_off	0x16
-#define state_off	0x07
 #define setmax_idx	0x25
 #define steam3_idx	0x40
 #define steam3_off	0x0D
-#define bypass_off	0x68
+#define authreq_off	0x68
+#define authrsp_idx	0x20
 
 const char *maxslots = "\x07\x3B\x86\x80\x01\x00\x00\x7E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};

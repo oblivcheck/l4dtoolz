@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\l4dtoolz_mm.cpp">
+    <ClCompile Include="..\l4dtoolz.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\signature.cpp">
@@ -29,7 +29,7 @@
     <ClInclude Include="..\signature_win32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\l4dtoolz_mm.h">
+    <ClInclude Include="..\l4dtoolz.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\signature.h">
