@@ -5,7 +5,6 @@
 #include "signature_linux.h"
 #endif
 
-IServerGameDLL *server = NULL;
 IVEngineServer *engine = NULL;
 ICvar *icvar = NULL;
 
@@ -15,8 +14,7 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(l4dtoolz, IServerPluginCallbacks, INTERFACEVER
 int l4dtoolz::tickrate = 0;
 void *l4dtoolz::sv_ptr = NULL;
 void *l4dtoolz::cookie_ptr = NULL;
-void *l4dtoolz::tickrate_ptr = NULL;
-void *l4dtoolz::tickrate_org = NULL;
+float *l4dtoolz::tick_ptr = NULL;
 void *l4dtoolz::setmax_ptr = NULL;
 uint *l4dtoolz::steam3_ptr = NULL;
 void *l4dtoolz::authreq_ptr = NULL;
@@ -67,8 +65,6 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 ConVar sv_setmax("sv_setmax", "18", 0, "Max clients", true, 18, true, 32, l4dtoolz::OnSetMax);
 void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 	int new_value = ((ConVar *)var)->GetInt();
-	int old_value = atoi(pOldValue);
-	if(new_value==old_value) return;
 	if(!setmax_ptr){
 		Msg("[L4DToolZ] sv_setmax init error\n");
 		return;
@@ -128,7 +124,7 @@ CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 }
 
 PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *, const char *, char *, int){
-	if(icvar->FindVar("sv_steam_bypass")->GetInt()!=1) return PLUGIN_CONTINUE;
+	if(sv_steam_bypass.GetInt()!=1) return PLUGIN_CONTINUE;
 	const CSteamID *steamid = engine->GetClientSteamID(pEntity);
 	if(!steamid){
 	err_mem:
@@ -148,23 +144,23 @@ PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, con
 	free(rsp);
 	return PLUGIN_CONTINUE;
 }
+void l4dtoolz::ServerActivate(edict_t *, int, int){
+	static bool init = false;
+	if(!init){
+		init = true;
+		if(tick_ptr) *tick_ptr = 1.0/tickrate;
+	}
+}
 
 bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
 	ConnectTier1Libraries(&interfaceFactory, 1);
-	server = (IServerGameDLL *)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
 	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
 	icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
 
+	ConVar_Register(0);
 	tickrate = CommandLine()->ParmValue("-tickrate", 0);
-	if(tickrate && !tickrate_ptr){
-		tickrate_ptr = (void *)(((uint *)server)[0]+tick_off);
-		unsigned char tickrate_new[6] = {0x04, 0x00};
-		*(uint *)&tickrate_new[2] = (uint)&l4dtoolz::GetTickInterval;
-		read_signature(tickrate_ptr, tickrate_new, tickrate_org);
-		write_signature(tickrate_ptr, tickrate_new);
-	}
-
 	mem_info base = {NULL, 0};
+
 	find_base_from_list(srv_dll, &base);
 	if(!info_players_ptr){
 		info_players_ptr = find_signature(info_players, &base);
@@ -208,7 +204,9 @@ err_sv:
 	#endif
 		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-	if(tickrate && !rate_check_ptr){
+	if(!tickrate) goto ret;
+	if(!tick_ptr) tick_ptr = (float *)(*(uint *)(((uint **)engine)[0][80]+state_off)+8);
+	if(!rate_check_ptr){
 		rate_check_ptr = find_signature(rate_check, &base);
 		read_signature(rate_check_ptr, rate_check_new, rate_check_org);
 		write_signature(rate_check_ptr, rate_check_new);
@@ -223,15 +221,13 @@ err_sv:
 		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
-
-	ConVar_Register(0);
+ret:
 	return true;
 }
 void l4dtoolz::Unload(){
 	ConVar_Unregister();
 	DisconnectTier1Libraries();
 
-	free_signature(tickrate_ptr, tickrate_org);
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
 	free_signature(maxslots_ptr, maxslots_org);

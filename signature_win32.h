@@ -11,7 +11,7 @@ unsigned char info_players_new[] = {0x06, 0xBA, 0xB8, '*', 0x00, 0x00, 0x00, 0xC
 const char *lobby_match = "\x06\xB8\x08\x00\x00\x00\xC3";
 unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 
-#define tick_off	0x24
+#define state_off	0x07
 #define sv_off		0x11
 #define cookie_off	0x16
 #define setmax_idx	0x25
