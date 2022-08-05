@@ -5,16 +5,16 @@
 #include "signature_linux.h"
 #endif
 
-IVEngineServer *engine = NULL;
-ICvar *icvar = NULL;
-
 l4dtoolz g_l4dtoolz;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(l4dtoolz, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, g_l4dtoolz);
 
-int l4dtoolz::tickrate = 0;
+CreateInterfaceFn iFact = NULL;
+IVEngineServer *engine = NULL;
+
+void *l4dtoolz::postinit_ptr = NULL;
+void *l4dtoolz::postinit_org = NULL;
 void *l4dtoolz::sv_ptr = NULL;
 void *l4dtoolz::cookie_ptr = NULL;
-float *l4dtoolz::tick_ptr = NULL;
 void *l4dtoolz::setmax_ptr = NULL;
 uint *l4dtoolz::steam3_ptr = NULL;
 void *l4dtoolz::authreq_ptr = NULL;
@@ -102,10 +102,10 @@ void l4dtoolz::OnBypass(IConVar *var, const char *pOldValue, float flOldValue){
 	}
 	unsigned char authreq_new[6] = {0x04, 0x00};
 	if(!authreq_ptr){
-		auto gsrv = (uint *)steam3_ptr[1];
+		auto gsrv = (uint **)steam3_ptr[1];
 		if(!gsrv) goto err_bypass;
-		authreq_ptr = (void *)(gsrv[0]+authreq_off);
-		authrsp_ptr = (void *)steam3_ptr[authrsp_idx];
+		authreq_ptr = &gsrv[0][authreq_idx];
+		authrsp_ptr = (uint *)steam3_ptr[authrsp_idx];
 		*(uint *)&authreq_new[2] = (uint)&OnAuth;
 		read_signature(authreq_ptr, authreq_new, authreq_org);
 	}
@@ -144,21 +144,8 @@ PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, con
 	free(rsp);
 	return PLUGIN_CONTINUE;
 }
-void l4dtoolz::ServerActivate(edict_t *, int, int){
-	static bool init = false;
-	if(!init){
-		init = true;
-		if(tick_ptr) *tick_ptr = 1.0/tickrate;
-	}
-}
 
-bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
-	ConnectTier1Libraries(&interfaceFactory, 1);
-	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
-	icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
-
-	ConVar_Register(0);
-	tickrate = CommandLine()->ParmValue("-tickrate", 0);
+void l4dtoolz::PostDLLInit(){
 	mem_info base = {NULL, 0};
 
 	find_base_from_list(srv_dll, &base);
@@ -175,11 +162,11 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 
 	find_base_from_list(eng_dll, &base);
 	if(!sv_ptr){
-		uint **net = (uint **)interfaceFactory("INETSUPPORT_001", NULL);
+		uint **net = (uint **)iFact("INETSUPPORT_001", NULL);
 		if(!net) goto err_sv;
 		uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
 		if(!CHKPTR(p_sv)) goto err_sv;
-		sv_ptr = (void *)p_sv;
+		sv_ptr = p_sv;
 		uint p1 = func+cookie_off, p2 = p_sv[0][steam3_idx]+steam3_off;
 		cookie_ptr = GETPTR(READCALL(p1));
 		setmax_ptr = GETPTR(p_sv[0][setmax_idx]);
@@ -204,8 +191,14 @@ err_sv:
 	#endif
 		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-	if(!tickrate) goto ret;
-	if(!tick_ptr) tick_ptr = (float *)(*(uint *)(((uint **)engine)[0][80]+state_off)+8);
+	
+#ifdef DEFAULT31SLOTS
+	engine->ServerCommand("sv_setmax 31\n");
+#endif
+
+	int tickrate = CommandLine()->ParmValue("-tickrate", 0);
+	if(!tickrate) return;
+	*(float *)(*(uint *)(((uint **)engine)[0][80]+state_off)+8) = 1.0/tickrate;
 	if(!rate_check_ptr){
 		rate_check_ptr = find_signature(rate_check, &base);
 		read_signature(rate_check_ptr, rate_check_new, rate_check_org);
@@ -217,17 +210,38 @@ err_sv:
 		*(uint *)&rate_set_new[2] = tickrate*1000;
 	#endif
 		write_signature(rate_check_ptr, rate_set_new); // sd
+		ICvar *icvar = (ICvar *)iFact(CVAR_INTERFACE_VERSION, NULL);
 		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate); // rq
 		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
-ret:
+}
+void PostInit(){
+	l4dtoolz::PostDLLInit();
+	((void (*)(void))l4dtoolz::GetPostInit())();
+}
+
+bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
+	iFact = interfaceFactory;
+	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
+
+	ConnectTier1Libraries(&interfaceFactory, 1);
+	ConVar_Register(0);
+
+	auto game = (uint **)gameServerFactory("ServerGameDLL005", NULL);
+	if(!game) return false;
+	postinit_ptr = &game[0][30]; // PostInit
+	unsigned char postinit_new[6] = {0x04, 0x00};
+	*(uint *)&postinit_new[2] = (uint)&PostInit;
+	read_signature(postinit_ptr, postinit_new, postinit_org);
+	write_signature(postinit_ptr, postinit_new);
 	return true;
 }
 void l4dtoolz::Unload(){
 	ConVar_Unregister();
 	DisconnectTier1Libraries();
 
+	free_signature(postinit_ptr, postinit_org);
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
 	free_signature(maxslots_ptr, maxslots_org);

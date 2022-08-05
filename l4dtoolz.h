@@ -14,9 +14,9 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.0beta1, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.0beta2, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName){ }
-	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
+	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
 	virtual void LevelShutdown(){ }
 	virtual void ClientActive(edict_t *pEntity){ }
@@ -29,16 +29,19 @@ public:
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID){ return PLUGIN_CONTINUE; }
 	virtual void OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue){ }
 
+	static uint GetPostInit(){ return *(uint *)((uint)postinit_org+2); }
+	static void PostDLLInit();
+
 	static void *GetSv(){ return sv_ptr; }
 	static void *GetCookie(){ return cookie_ptr; }
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnBypass(IConVar *var, const char *pOldValue, float flOldValue);
 private:
-	static int tickrate;
+	static void *postinit_ptr;
+	static void *postinit_org;
 	static void *sv_ptr;
 	static void *cookie_ptr;
-	static float *tick_ptr;
 	static void *setmax_ptr;
 	static uint *steam3_ptr;
 	static void *authreq_ptr;

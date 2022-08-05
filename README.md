@@ -1,6 +1,6 @@
 # 1. 说明
 New: 移除对Metamod平台的依赖,改为Source插件  
-相对于其他版本l4dtoolz,移除`sv_force_unreserved`  
+相对于其他版本l4dtoolz,移除`sv_force_unreserved`(关匹配请`-nomaster`)  
 **使用方法: [下载](https://github.com/lakwsh/l4dtoolz/releases/latest)并解压到addons文件夹**  
 **如使用tickrate解锁功能,请删除tickrate_enabler**
 
