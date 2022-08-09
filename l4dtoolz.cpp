@@ -228,8 +228,7 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 	ConnectTier1Libraries(&interfaceFactory, 1);
 	ConVar_Register(0);
 
-	auto game = (uint **)gameServerFactory("ServerGameDLL005", NULL);
-	if(!game) return false;
+	auto game = (uint **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
 	postinit_ptr = &game[0][30]; // PostInit
 	unsigned char postinit_new[6] = {0x04, 0x00};
 	*(uint *)&postinit_new[2] = (uint)&PostInit;
