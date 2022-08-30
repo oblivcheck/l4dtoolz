@@ -29,8 +29,8 @@ New: 移除对Metamod平台的依赖,改为Source插件
 
 # 4. 绕过SteamID验证
 功能开关: `sv_steam_bypass`(置1为不验证SteamID)  
-启用本功能可以完全避免`No Steam logon`踢出  
-**注意: 目前Win系统会出现A2S_INFO查询不到人数的Bug**
+本功能理论上可以避免`No Steam logon`踢出(仅限开启状态下进入游戏的玩家)  
+**注意: 目前Win系统会出现A2S_INFO查询不到人数的Bug(原因未知)**
 
 # 5. 主要特色
 ## 5.1 更安全

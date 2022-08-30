@@ -76,6 +76,18 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 #endif
 }
 
+unsigned l4dtoolz::PostAuth(void *rsp){
+	ThreadSleep(1000);
+#ifdef WIN32
+	((void (__thiscall *)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
+#else
+	((void (*)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
+#endif
+	Msg("[L4DToolZ] %llu validated.\n", *(uint64 *)rsp);
+	free(rsp);
+	return 0;
+}
+
 #ifdef WIN32
 int OnAuth(const void *, int, uint64 steamID){
 #else
@@ -85,8 +97,17 @@ int OnAuth(void *, const void *, int, uint64 steamID){
 		Msg("[L4DToolZ] invalid steamID.\n");
 		return 1;
 	}
-	Msg("[L4DToolZ] %llu connected.\n", steamID);
-	return 0;
+	void *rsp = malloc(0x14);
+	if(!rsp) return 1;
+	memset(rsp, 0, 0x14);
+	*(uint64 *)rsp = steamID;
+	ThreadHandle_t h = CreateSimpleThread(&l4dtoolz::PostAuth, rsp);
+	if(h){
+		ReleaseThreadHandle(h);
+		Msg("[L4DToolZ] %llu connected.\n", steamID);
+		return 0;
+	}
+	return 1;
 }
 
 ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", true, 0, true, 1, l4dtoolz::OnBypass);
@@ -121,28 +142,6 @@ CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 	}
 	cookie(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
 	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
-}
-
-PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *, const char *, char *, int){
-	if(sv_steam_bypass.GetInt()!=1) return PLUGIN_CONTINUE;
-	const CSteamID *steamid = engine->GetClientSteamID(pEntity);
-	if(!steamid){
-	err_mem:
-		*bAllowConnect = false;
-		return PLUGIN_STOP;
-	}
-	void *rsp = malloc(0x14);
-	if(!rsp) goto err_mem;
-	memset(rsp, 0, 0x14);
-	memcpy(rsp, steamid, 8);
-#ifdef WIN32
-	((void (__thiscall *)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
-#else
-	((void (*)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
-#endif
-	Msg("[L4DToolZ] %llu validated.\n", *(uint64 *)rsp);
-	free(rsp);
-	return PLUGIN_CONTINUE;
 }
 
 void l4dtoolz::PostDLLInit(){
