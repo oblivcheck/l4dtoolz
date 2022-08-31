@@ -12,7 +12,7 @@ OBJECTS = l4dtoolz.cpp signature.cpp
 ### CONFIGURE ANY OTHER FLAGS/OPTIONS HERE ###
 ##############################################
 
-OPT_FLAGS = -O3 -funroll-loops -pipe
+OPT_FLAGS = -Ofast -pipe
 GCC4_FLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 DEBUG_FLAGS = -g -ggdb3 -D_DEBUG
 CPP = gcc
@@ -126,7 +126,7 @@ all:
 	$(MAKE) -f Makefile l4dtoolz
 
 l4dtoolz: $(OBJ_BIN)
-	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -o $(BIN_DIR)/$(BINARY)
+	$(CPP) $(INCLUDE) -m32 $(OBJ_BIN) $(LINK) -ldl -lm -s -o $(BIN_DIR)/$(BINARY)
 
 default: all
 
