@@ -8,11 +8,10 @@
 l4dtoolz g_l4dtoolz;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(l4dtoolz, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, g_l4dtoolz);
 
-CreateInterfaceFn iFact = NULL;
 IVEngineServer *engine = NULL;
 
-void *l4dtoolz::postinit_ptr = NULL;
-void *l4dtoolz::postinit_org = NULL;
+uint *l4dtoolz::tickint_ptr = NULL;
+void *l4dtoolz::tickint_org = NULL;
 void *l4dtoolz::sv_ptr = NULL;
 void *l4dtoolz::cookie_ptr = NULL;
 void *l4dtoolz::setmax_ptr = NULL;
@@ -144,7 +143,22 @@ CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 }
 
-void l4dtoolz::PostDLLInit(){
+int l4dtoolz::GetTick(){
+	static int tick = CommandLine()->ParmValue("-tickrate", 0);
+	return tick;
+}
+
+float GetTickInterval(void *){
+	static float tickint = 1.0/l4dtoolz::GetTick();
+	return tickint;
+}
+
+bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
+	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
+
+	ConnectTier1Libraries(&interfaceFactory, 1);
+	ConVar_Register(0);
+
 	mem_info base = {NULL, 0};
 
 	find_base_from_list(srv_dll, &base);
@@ -161,7 +175,7 @@ void l4dtoolz::PostDLLInit(){
 
 	find_base_from_list(eng_dll, &base);
 	if(!sv_ptr){
-		uint **net = (uint **)iFact("INETSUPPORT_001", NULL);
+		uint **net = (uint **)interfaceFactory("INETSUPPORT_001", NULL);
 		if(!net) goto err_sv;
 		uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
 		if(!CHKPTR(p_sv)) goto err_sv;
@@ -195,51 +209,38 @@ err_sv:
 	engine->ServerCommand("sv_setmax 31\n");
 #endif
 
-	int tickrate = CommandLine()->ParmValue("-tickrate", 0);
-	if(!tickrate) return;
-	*(float *)(*(uint *)(((uint **)engine)[0][80]+state_off)+8) = 1.0/tickrate;
+	int tick = GetTick();
+	if(!tick) return true;
+	if(!tickint_ptr){
+		auto game = (uint **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
+		tickint_ptr = &game[0][tickint_idx];
+		unsigned char tickint_new[6] = {0x04, 0x00};
+		*(uint *)&tickint_new[2] = (uint)&GetTickInterval;
+		read_signature(tickint_ptr, tickint_new, tickint_org);
+		write_signature(tickint_ptr, tickint_new);
+	}
 	if(!rate_check_ptr){
 		rate_check_ptr = find_signature(rate_check, &base);
 		read_signature(rate_check_ptr, rate_check_new, rate_check_org);
 		write_signature(rate_check_ptr, rate_check_new);
 		read_signature(rate_check_ptr, rate_set_new, rate_set_org);
 	#ifdef WIN32
-		*(uint *)&rate_set_new[3] = tickrate*1000;
+		*(uint *)&rate_set_new[3] = tick*1000;
 	#else
-		*(uint *)&rate_set_new[2] = tickrate*1000;
+		*(uint *)&rate_set_new[2] = tick*1000;
 	#endif
 		write_signature(rate_check_ptr, rate_set_new); // sd
-		ICvar *icvar = (ICvar *)iFact(CVAR_INTERFACE_VERSION, NULL);
-		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate); // rq
-		icvar->FindVar("sv_minupdaterate")->SetValue(tickrate);
+		ICvar *icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
+		icvar->FindVar("sv_minupdaterate")->SetValue(tick); // rq
+		icvar->FindVar("sv_minupdaterate")->SetValue(tick);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
-}
-void PostInit(){
-	l4dtoolz::PostDLLInit();
-	((void (*)(void))l4dtoolz::GetPostInit())();
-}
-
-bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
-	iFact = interfaceFactory;
-	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
-
-	ConnectTier1Libraries(&interfaceFactory, 1);
-	ConVar_Register(0);
-
-	auto game = (uint **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
-	postinit_ptr = &game[0][30]; // PostInit
-	unsigned char postinit_new[6] = {0x04, 0x00};
-	*(uint *)&postinit_new[2] = (uint)&PostInit;
-	read_signature(postinit_ptr, postinit_new, postinit_org);
-	write_signature(postinit_ptr, postinit_new);
 	return true;
 }
 void l4dtoolz::Unload(){
 	ConVar_Unregister();
 	DisconnectTier1Libraries();
 
-	free_signature(postinit_ptr, postinit_org);
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
 	free_signature(maxslots_ptr, maxslots_org);
@@ -248,4 +249,5 @@ void l4dtoolz::Unload(){
 	free_signature(rate_check_ptr, rate_check_org);
 	free_signature(rate_check_ptr, rate_set_org);
 	free_signature(authreq_ptr, authreq_org);
+	free_signature(tickint_ptr, tickint_org);
 }

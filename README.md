@@ -16,6 +16,7 @@ New: 移除对Metamod平台的依赖,改为Source插件
 **注意: 不移除大厅会限制最大玩家数为4人(coop)**
 
 # 3. 解锁tickrate
+**注意: 如通过plugin_load指令手动加载本插件,可能出现tickrate异常问题**
 ## 3.1 具体用法
 在启动项中添加`-tickrate <需要的值>`,不设置则不做任何修改
 ## 3.2 相关CVar

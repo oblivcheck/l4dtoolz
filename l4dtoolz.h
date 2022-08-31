@@ -14,7 +14,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.1, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.2, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName){ }
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -29,18 +29,16 @@ public:
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID){ return PLUGIN_CONTINUE; }
 	virtual void OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue){ }
 
-	static uint GetPostInit(){ return *(uint *)((uint)postinit_org+2); }
-	static void PostDLLInit();
-	static unsigned PostAuth(void *pParam);
-
 	static void *GetSv(){ return sv_ptr; }
 	static void *GetCookie(){ return cookie_ptr; }
+	static int GetTick(); // this
+	static unsigned PostAuth(void *req);
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnBypass(IConVar *var, const char *pOldValue, float flOldValue);
 private:
-	static void *postinit_ptr;
-	static void *postinit_org;
+	static uint *tickint_ptr;
+	static void *tickint_org;
 	static void *sv_ptr;
 	static void *cookie_ptr;
 	static void *setmax_ptr;
