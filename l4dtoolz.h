@@ -14,7 +14,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.2, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.3, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName){ }
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -36,6 +36,7 @@ public:
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnBypass(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnChangeUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
 private:
 	static uint *tickint_ptr;
 	static void *tickint_org;
@@ -59,5 +60,7 @@ private:
 	static void *rate_check_ptr;
 	static void *rate_check_org;
 	static void *rate_set_org;
+	static void *lobby_req_ptr;
+	static void *lobby_req_org;
 };
 extern l4dtoolz g_l4dtoolz;

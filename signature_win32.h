@@ -19,6 +19,7 @@ unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 #define steam3_off	0x0D
 #define authreq_idx	0x1A
 #define authrsp_idx	0x20
+#define lobbyreq_idx	0x3D
 
 const char *maxslots = "\x07\x3B\x86\x80\x01\x00\x00\x7E";
 unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};
@@ -31,4 +32,6 @@ const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
 const char *rate_check = "\x0D\x0F\x2F\xC1\x76\xC3\x0F\x28\xC1\xF3\x0F\x2C\xC0\x89";
 const char *rate_check_new = "\x02\x03\x90\x90";
 unsigned char rate_set_new[] = {0x07, 0x05, 0xB8, '*', '*', '*', '*', 0x90, 0x90};
+
+const char *lobby_req_new = "\x03\x00\xC2\x08\x00"; // balance
 #endif //_INCLUDE_L4D2_SIGNATURE_WIN32_

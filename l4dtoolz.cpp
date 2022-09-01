@@ -5,6 +5,8 @@
 #include "signature_linux.h"
 #endif
 
+//#define DEFAULT31SLOTS
+
 l4dtoolz g_l4dtoolz;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(l4dtoolz, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, g_l4dtoolz);
 
@@ -32,6 +34,8 @@ void *l4dtoolz::range_check_org = NULL;
 void *l4dtoolz::rate_check_ptr = NULL;
 void *l4dtoolz::rate_check_org = NULL;
 void *l4dtoolz::rate_set_org = NULL;
+void *l4dtoolz::lobby_req_ptr = NULL;
+void *l4dtoolz::lobby_req_org = NULL;
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
@@ -133,6 +137,24 @@ void l4dtoolz::OnBypass(IConVar *var, const char *pOldValue, float flOldValue){
 	else write_signature(authreq_ptr, authreq_org);
 }
 
+ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation", true, 0, true, 1, l4dtoolz::OnChangeUnreserved);
+void l4dtoolz::OnChangeUnreserved(IConVar *var, const char *pOldValue, float flOldValue){
+	int new_value = ((ConVar *)var)->GetInt();
+	int old_value = atoi(pOldValue);
+	if(new_value==old_value) return;
+	if(!lobby_req_ptr){
+		var->SetValue(0);
+		Msg("[L4DToolZ] sv_force_unreserved init error\n");
+		return;
+	}
+	if(new_value){
+		write_signature(lobby_req_ptr, lobby_req_new);
+		engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
+		return;
+	}
+	write_signature(lobby_req_ptr, lobby_req_org);
+}
+
 CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
 	auto cookie = (void (*)(void *, uint64, const char *))l4dtoolz::GetCookie();
 	if(!cookie){
@@ -185,6 +207,8 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 		setmax_ptr = GETPTR(p_sv[0][setmax_idx]);
 		auto sfunc = (uint *(*)(void))READCALL(p2);
 		if(CHKPTR(sfunc)) steam3_ptr = sfunc(); // conn
+		lobby_req_ptr = (void *)p_sv[0][lobbyreq_idx];
+		read_signature(lobby_req_ptr, lobby_req_new, lobby_req_org);
 	}
 err_sv:
 	if(!range_check_ptr){
@@ -204,9 +228,9 @@ err_sv:
 	#endif
 		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-	
+
 #ifdef DEFAULT31SLOTS
-	engine->ServerCommand("sv_setmax 31\n");
+	engine->ServerCommand("sv_setmax 31\n"); // once
 #endif
 
 	int tick = GetTick();
@@ -230,9 +254,7 @@ err_sv:
 		*(uint *)&rate_set_new[2] = tick*1000;
 	#endif
 		write_signature(rate_check_ptr, rate_set_new); // sd
-		ICvar *icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
-		icvar->FindVar("sv_minupdaterate")->SetValue(tick); // rq
-		icvar->FindVar("sv_minupdaterate")->SetValue(tick);
+		auto icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
 		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	}
 	return true;
@@ -250,4 +272,5 @@ void l4dtoolz::Unload(){
 	free_signature(rate_check_ptr, rate_set_org);
 	free_signature(authreq_ptr, authreq_org);
 	free_signature(tickint_ptr, tickint_org);
+	free_signature(lobby_req_ptr, lobby_req_org);
 }

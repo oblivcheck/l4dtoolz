@@ -14,6 +14,9 @@ New: 移除对Metamod平台的依赖,改为Source插件
 `sv_unreserved`(建议配合插件: 大厅满人自动移除)  
 此操作会将`sv_allow_lobby_connect_only`的值置0  
 **注意: 不移除大厅会限制最大玩家数为4人(coop)**
+## 2.4 禁止匹配(非原版实现)
+功能开关: `sv_force_unreserved`(置1为禁止)  
+开启功能会将`sv_allow_lobby_connect_only`的值置0
 
 # 3. 解锁tickrate
 **注意: 如通过plugin_load指令手动加载本插件,可能出现tickrate异常问题**
@@ -21,12 +24,10 @@ New: 移除对Metamod平台的依赖,改为Source插件
 在启动项中添加`-tickrate <需要的值>`,不设置则不做任何修改
 ## 3.2 相关CVar
 废弃(存在但改了不会有效果): `sv_maxrate`及`sv_minrate`  
-可选(已根据启动项自动设置): `sv_minupdaterate`及`sv_maxupdaterate`  
-建议修改:  
-`sv_mincmdrate`,`sv_maxcmdrate`,`nb_update_frequency`  
-`sv_client_min_interp_ratio`,`sv_client_max_interp_ratio`  
-`net_splitrate`,`net_splitpacket_maxrate`  
-必须修改(建议写到server.cfg): `fps_max`(每关都要改,引擎限制)
+需要修改(写到server.cfg,部分cvar需要sm_cvar前缀):  
+`sv_minupdaterate`,`sv_maxupdaterate`,`sv_mincmdrate`,`sv_maxcmdrate`,  
+`nb_update_frequency`,`sv_client_min_interp_ratio`,`fps_max`,  
+`sv_client_max_interp_ratio`,`net_splitrate`,`net_splitpacket_maxrate`  
 
 # 4. 绕过SteamID验证
 功能开关: `sv_steam_bypass`(置1为不验证SteamID)  
