@@ -5,8 +5,6 @@
 #include "signature_linux.h"
 #endif
 
-//#define DEFAULT31SLOTS
-
 l4dtoolz g_l4dtoolz;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(l4dtoolz, IServerPluginCallbacks, INTERFACEVERSION_ISERVERPLUGINCALLBACKS, g_l4dtoolz);
 
@@ -79,18 +77,6 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 #endif
 }
 
-unsigned l4dtoolz::PostAuth(void *rsp){
-	ThreadSleep(1000);
-#ifdef WIN32
-	((void (__thiscall *)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
-#else
-	((void (*)(void *, void *))authrsp_ptr)(steam3_ptr, rsp);
-#endif
-	Msg("[L4DToolZ] %llu validated.\n", *(uint64 *)rsp);
-	free(rsp);
-	return 0;
-}
-
 #ifdef WIN32
 int OnAuth(const void *, int, uint64 steamID){
 #else
@@ -100,17 +86,8 @@ int OnAuth(void *, const void *, int, uint64 steamID){
 		Msg("[L4DToolZ] invalid steamID.\n");
 		return 1;
 	}
-	void *rsp = malloc(0x14);
-	if(!rsp) return 1;
-	memset(rsp, 0, 0x14);
-	*(uint64 *)rsp = steamID;
-	ThreadHandle_t h = CreateSimpleThread(&l4dtoolz::PostAuth, rsp);
-	if(h){
-		ReleaseThreadHandle(h);
-		Msg("[L4DToolZ] %llu connected.\n", steamID);
-		return 0;
-	}
-	return 1;
+	Msg("[L4DToolZ] %llu connected.\n", steamID);
+	return 0;
 }
 
 ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", true, 0, true, 1, l4dtoolz::OnBypass);
@@ -135,6 +112,30 @@ void l4dtoolz::OnBypass(IConVar *var, const char *pOldValue, float flOldValue){
 	}
 	if(new_value) write_signature(authreq_ptr, authreq_new);
 	else write_signature(authreq_ptr, authreq_org);
+}
+
+PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *, const char *, char *, int){
+	if(sv_steam_bypass.GetInt()!=1) return PLUGIN_CONTINUE;
+	const CSteamID *steamID = engine->GetClientSteamID(pEntity);
+	if(!steamID){
+		Msg("[L4DToolZ] invalid steamID.\n");
+	reject:
+		*bAllowConnect = false;
+		return PLUGIN_STOP;
+	}
+	struct {
+		uint64 id;
+		int code;
+		uint64 owner;
+	} rsp = {*(uint64 *)steamID};
+	#ifdef WIN32
+	((void (__thiscall *)(void *, void *))authrsp_ptr)(steam3_ptr, &rsp);
+#else
+	((void (*)(void *, void *))authrsp_ptr)(steam3_ptr, &rsp);
+#endif
+	if(engine->GetPlayerUserId(pEntity)==-1) goto reject;
+	Msg("[L4DToolZ] %llu validated.\n", rsp.id);
+	return PLUGIN_CONTINUE;
 }
 
 ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation", true, 0, true, 1, l4dtoolz::OnChangeUnreserved);
@@ -228,10 +229,6 @@ err_sv:
 	#endif
 		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
-
-#ifdef DEFAULT31SLOTS
-	engine->ServerCommand("sv_setmax 31\n"); // once
-#endif
 
 	int tick = GetTick();
 	if(!tick) return true;
