@@ -156,15 +156,16 @@ void l4dtoolz::OnChangeUnreserved(IConVar *var, const char *pOldValue, float flO
 	write_signature(lobby_req_ptr, lobby_req_org);
 }
 
-CON_COMMAND(sv_unreserved, "Remove lobby reservation"){
-	auto cookie = (void (*)(void *, uint64, const char *))l4dtoolz::GetCookie();
+void l4dtoolz::Unreserved_f(){
+	auto cookie = (void (*)(void *, uint64, const char *))cookie_ptr;
 	if(!cookie){
 		Msg("[L4DToolZ] sv_unreserved init error\n");
 		return;
 	}
-	cookie(l4dtoolz::GetSv(), 0, "Unreserved by L4DToolZ");
+	cookie(sv_ptr, 0, "Unreserved by L4DToolZ");
 	engine->ServerCommand("sv_allow_lobby_connect_only 0\n");
 }
+ConCommand unreserved("sv_unreserved", l4dtoolz::Unreserved_f, "Remove lobby reservation");
 
 int l4dtoolz::GetTick(){
 	static int tick = CommandLine()->ParmValue("-tickrate", 0);

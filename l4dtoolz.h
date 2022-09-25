@@ -29,8 +29,7 @@ public:
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID){ return PLUGIN_CONTINUE; }
 	virtual void OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue){ }
 
-	static void *GetSv(){ return sv_ptr; }
-	static void *GetCookie(){ return cookie_ptr; }
+	static void Unreserved_f();
 	static int GetTick(); // this
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
