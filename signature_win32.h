@@ -13,6 +13,7 @@ unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 
 #define tickint_idx	0x09
 #define sv_off		0x11
+#define slots_idx	0x60
 #define cookie_off	0x16
 #define setmax_idx	0x25
 #define steam3_idx	0x40
@@ -20,11 +21,6 @@ unsigned char lobby_match_new[] = {0x01, 0x01, '*'};
 #define authreq_idx	0x1A
 #define authrsp_idx	0x20
 #define lobbyreq_idx	0x3D
-
-const char *maxslots = "\x07\x3B\x86\x80\x01\x00\x00\x7E";
-unsigned char maxslots_new[] = {0x06, 0x00, 0x83, 0xF8, '*', 0x90, 0x90, 0x90};
-
-const char *slots_check_new = "\x02\xE2\x90\x90";
 
 const char *range_check = "\x09\x8B\x86\x28\x02\x00\x00\x8B\x4D\x08";
 const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";

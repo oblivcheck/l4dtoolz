@@ -14,8 +14,8 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.4, https://github.com/lakwsh/l4dtoolz"; }
-	virtual void LevelInit(char const *pMapName){ }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.5, https://github.com/lakwsh/l4dtoolz"; }
+	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
 	virtual void LevelShutdown(){ }
@@ -39,6 +39,7 @@ private:
 	static uint *tickint_ptr;
 	static void *tickint_org;
 	static void *sv_ptr;
+	static uint *slots_ptr;
 	static void *cookie_ptr;
 	static void *setmax_ptr;
 	static uint *steam3_ptr;
@@ -49,10 +50,6 @@ private:
 	static void *info_players_org;
 	static void *lobby_match_ptr;
 	static void *lobby_match_org;
-	static void *maxslots_ptr;
-	static void *maxslots_org;
-	static void *slots_check_ptr;
-	static void *slots_check_org;
 	static void *range_check_ptr;
 	static void *range_check_org;
 	static void *rate_check_ptr;

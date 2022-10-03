@@ -13,6 +13,7 @@ IVEngineServer *engine = NULL;
 uint *l4dtoolz::tickint_ptr = NULL;
 void *l4dtoolz::tickint_org = NULL;
 void *l4dtoolz::sv_ptr = NULL;
+uint *l4dtoolz::slots_ptr = NULL;
 void *l4dtoolz::cookie_ptr = NULL;
 void *l4dtoolz::setmax_ptr = NULL;
 uint *l4dtoolz::steam3_ptr = NULL;
@@ -23,10 +24,6 @@ void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
-void *l4dtoolz::maxslots_ptr = NULL;
-void *l4dtoolz::maxslots_org = NULL;
-void *l4dtoolz::slots_check_ptr = NULL;
-void *l4dtoolz::slots_check_org = NULL;
 void *l4dtoolz::range_check_ptr = NULL;
 void *l4dtoolz::range_check_org = NULL;
 void *l4dtoolz::rate_check_ptr = NULL;
@@ -40,27 +37,21 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(!slots_check_ptr || !maxslots_ptr || !info_players_ptr){
+	if(!slots_ptr || !info_players_ptr){
+		var->SetValue(-1);
 		Msg("[L4DToolZ] sv_maxplayers init error\n");
 		return;
 	}
-	if(new_value>=0){
-		maxslots_new[4] = info_players_new[3] = (unsigned char)new_value;
-		if(lobby_match_ptr){
-			lobby_match_new[2] = (unsigned char)new_value;
-			write_signature(lobby_match_ptr, lobby_match_new);
-		}else{
-			Msg("[L4DToolZ] lobby_match init error\n");
-		}
-		write_signature(maxslots_ptr, maxslots_new);
-		write_signature(slots_check_ptr, slots_check_new);
-		write_signature(info_players_ptr, info_players_new);
-	}else{
-		write_signature(maxslots_ptr, maxslots_org);
-		write_signature(slots_check_ptr, slots_check_org);
+	if(new_value<0){
 		write_signature(info_players_ptr, info_players_org);
 		if(lobby_match_ptr) write_signature(lobby_match_ptr, lobby_match_org);
+		return;
 	}
+	*slots_ptr = new_value;
+	info_players_new[3] = lobby_match_new[2] = (unsigned char)new_value;
+	if(lobby_match_ptr) write_signature(lobby_match_ptr, lobby_match_new);
+	else Msg("[L4DToolZ] lobby_match init error\n");
+	write_signature(info_players_ptr, info_players_new);
 }
 
 ConVar sv_setmax("sv_setmax", "18", 0, "Max clients", true, 18, true, 32, l4dtoolz::OnSetMax);
@@ -75,6 +66,11 @@ void l4dtoolz::OnSetMax(IConVar *var, const char *pOldValue, float flOldValue){
 #else
 	((void (*)(void *, int))setmax_ptr)(sv_ptr, new_value);
 #endif
+}
+
+void l4dtoolz::LevelInit(char const *){
+	int slots = sv_maxplayers.GetInt();
+	if(slots>=0 && slots_ptr) *slots_ptr = slots;
 }
 
 #ifdef WIN32
@@ -204,6 +200,7 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 		uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
 		if(!CHKPTR(p_sv)) goto err_sv;
 		sv_ptr = p_sv;
+		slots_ptr = (uint *)&p_sv[slots_idx];
 		uint p1 = func+cookie_off, p2 = p_sv[0][steam3_idx]+steam3_off;
 		cookie_ptr = GETPTR(READCALL(p1));
 		setmax_ptr = GETPTR(p_sv[0][setmax_idx]);
@@ -217,18 +214,6 @@ err_sv:
 		range_check_ptr = find_signature(range_check, &base);
 		read_signature(range_check_ptr, range_check_new, range_check_org);
 		write_signature(range_check_ptr, range_check_new);
-	}
-	if(!maxslots_ptr){
-		maxslots_ptr = find_signature(maxslots, &base);
-		read_signature(maxslots_ptr, maxslots_new, maxslots_org);
-	}
-	if(!slots_check_ptr){
-	#ifdef WIN32
-		slots_check_ptr = maxslots_ptr;
-	#else
-		slots_check_ptr = find_signature(slots_check, &base);
-	#endif
-		read_signature(slots_check_ptr, slots_check_new, slots_check_org);
 	}
 
 	int tick = GetTick();
@@ -257,14 +242,13 @@ err_sv:
 	}
 	return true;
 }
+
 void l4dtoolz::Unload(){
 	ConVar_Unregister();
 	DisconnectTier1Libraries();
 
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
-	free_signature(maxslots_ptr, maxslots_org);
-	free_signature(slots_check_ptr, slots_check_org);
 	free_signature(range_check_ptr, range_check_org);
 	free_signature(rate_check_ptr, rate_check_org);
 	free_signature(rate_check_ptr, rate_set_org);
