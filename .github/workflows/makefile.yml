@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Prepare env
+      run: |
+        echo "deb http://dk.archive.ubuntu.com/ubuntu/ xenial main" | sudo tee -a /etc/apt/sources.list
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt install gcc-5-multilib g++-5-multilib
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 100
+
+    - name: Checking out hl2sdk-l4d2
+      uses: actions/checkout@v3
+      with:
+        repository: alliedmodders/hl2sdk
+        ref: l4d2
+        path: hl2sdk-l4d2
+
+    - name: Checking out L4DToolZ
+      uses: actions/checkout@v3
+      with:
+        path: l4dtoolz
+
+    - name: Compiling L4DToolZ
+      working-directory: l4dtoolz
+      run: make
+
+    - name: Uploading L4DToolZ
+      uses: actions/upload-artifact@v3
+      with:
+        name: L4DToolZ-linux
+        path: l4dtoolz/Release.left4dead2/l4dtoolz.so
