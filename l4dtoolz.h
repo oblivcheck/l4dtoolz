@@ -8,13 +8,19 @@
 #define GETPTR(PTR) (PTR&0xF?NULL:(void *)PTR)
 #define READCALL(PTR) ((PTR+5-1)+*(int *)PTR)
 
+struct ValidateAuthTicketResponse_t{
+	uint64 id;
+	int code;
+	uint64 owner;
+};
+
 class l4dtoolz:public IServerPluginCallbacks{
 public:
 	virtual bool Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory);
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.5, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.6_beta, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -30,11 +36,20 @@ public:
 	virtual void OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue){ }
 
 	static void Unreserved_f();
+	static void SetMax_f(const CCommand &args);
 	static int GetTick(); // this
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnSetMax(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnBypass(IConVar *var, const char *pOldValue, float flOldValue);
-	static void OnChangeUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnAntiSharing(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnForceUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
+
+#ifdef WIN32
+	static int PreAuth(const void *, int, uint64);
+	static void PostAuth(ValidateAuthTicketResponse_t *);
+#else
+	static int PreAuth(void *, const void *, int, uint64);
+	static void PostAuth(void *, ValidateAuthTicketResponse_t *);
+#endif
 private:
 	static uint *tickint_ptr;
 	static void *tickint_org;
@@ -45,7 +60,8 @@ private:
 	static uint *steam3_ptr;
 	static void *authreq_ptr;
 	static void *authreq_org;
-	static void *authrsp_ptr;
+	static uint *authrsp_ptr;
+	static uint authrsp_org;
 	static void *info_players_ptr;
 	static void *info_players_org;
 	static void *lobby_match_ptr;
