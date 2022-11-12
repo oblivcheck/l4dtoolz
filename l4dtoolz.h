@@ -8,11 +8,13 @@
 #define GETPTR(PTR) (PTR&0xF?NULL:(void *)PTR)
 #define READCALL(PTR) ((PTR+5-1)+*(int *)PTR)
 
+#pragma pack(push, 1)
 struct ValidateAuthTicketResponse_t{
 	uint64 id;
 	int code;
 	uint64 owner;
 };
+#pragma pack(pop)
 
 class l4dtoolz:public IServerPluginCallbacks{
 public:
@@ -20,7 +22,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.6_beta, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.6_beta1, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }

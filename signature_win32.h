@@ -29,7 +29,5 @@ const char *rate_check = "\x0D\x0F\x2F\xC1\x76\xC3\x0F\x28\xC1\xF3\x0F\x2C\xC0\x
 const char *rate_check_new = "\x02\x03\x90\x90";
 unsigned char rate_set_new[] = {0x07, 0x05, 0xB8, '*', '*', '*', '*', 0x90, 0x90};
 
-unsigned char authrsp_new[] = {0x04, 0x00, '*', '*', '*', '*'};
-
 const char *lobby_req_new = "\x03\x00\xC2\x08\x00"; // stack balance
 #endif // _INCLUDE_L4D2_SIGNATURE_WIN32_

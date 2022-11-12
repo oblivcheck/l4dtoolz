@@ -141,10 +141,15 @@ void l4dtoolz::PostAuth(void *, ValidateAuthTicketResponse_t *rsp){
 #endif
 	if(rsp->id!=rsp->owner){
 		rsp->code = 2;
-		Msg("[L4DToolZ] %llu using family sharing.\n", rsp->id);
+		Msg("[L4DToolZ] %llu using family sharing, owner: %llu.\n", rsp->id, rsp->owner);
 	}
 #ifdef WIN32
-	((void (__thiscall *)(void *, void *))authrsp_org)(steam3_ptr, rsp);
+	__asm{
+		mov esp, ebp
+		pop ebp
+		mov ecx, steam3_ptr
+		jmp authrsp_org
+	}
 #else
 	((void (*)(void *, void *))authrsp_org)(steam3_ptr, rsp);
 #endif

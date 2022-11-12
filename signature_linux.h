@@ -29,7 +29,5 @@ const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
 const char *rate_check_new = "\x01\x08\xEB";
 unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
 
-unsigned char authrsp_new[] = {0x04, 0x00, '*', '*', '*', '*'};
-
 const char *lobby_req_new = "\x01\x00\xC3";
 #endif // _INCLUDE_L4D2_SIGNATURE_LINUX_
