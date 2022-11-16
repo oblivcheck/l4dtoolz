@@ -145,8 +145,7 @@ void l4dtoolz::PostAuth(void *, ValidateAuthTicketResponse_t *rsp){
 	}
 #ifdef WIN32
 	__asm{
-		mov esp, ebp
-		pop ebp
+		leave
 		mov ecx, steam3_ptr
 		jmp authrsp_org
 	}
@@ -198,13 +197,13 @@ void l4dtoolz::Unreserved_f(){
 }
 ConCommand unreserved("sv_unreserved", l4dtoolz::Unreserved_f, "Remove lobby reservation");
 
-int l4dtoolz::GetTick(){
-	static int tick = CommandLine()->ParmValue("-tickrate", 0);
+int GetTick(){
+	static int tick = CommandLine()->ParmValue("-tickrate", 30);
 	return tick;
 }
 
-float GetTickInterval(void *){
-	static float tickint = 1.0/l4dtoolz::GetTick();
+float GetTickInterval(){
+	static float tickint = 1.0/GetTick();
 	return tickint;
 }
 
@@ -254,7 +253,8 @@ err_sv:
 	}
 
 	int tick = GetTick();
-	if(!tick) return true;
+	if(tick==30) return true;
+	Msg("[L4DToolZ] tickrate: %d\n", tick);
 	if(!tickint_ptr){
 		auto game = (uint **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
 		tickint_ptr = &game[0][tickint_idx];

@@ -22,7 +22,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.6_beta1, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.6, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -39,7 +39,6 @@ public:
 
 	static void Unreserved_f();
 	static void SetMax_f(const CCommand &args);
-	static int GetTick(); // this
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnAntiSharing(IConVar *var, const char *pOldValue, float flOldValue);
