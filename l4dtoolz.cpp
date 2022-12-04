@@ -104,9 +104,9 @@ void l4dtoolz::OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValu
 	}
 	unsigned char authreq_new[6] = {0x04, 0x00};
 	if(!authreq_ptr){
-		auto gsrv = (uint **)steam3_ptr[1];
-		if(!gsrv) goto err_bypass;
-		authreq_ptr = &gsrv[0][authreq_idx];
+		auto gsv = (uint **)steam3_ptr[1];
+		if(!gsv) goto err_bypass;
+		authreq_ptr = &gsv[0][authreq_idx];
 		*(uint *)&authreq_new[2] = (uint)&l4dtoolz::PreAuth;
 		read_signature(authreq_ptr, authreq_new, authreq_org);
 	}
@@ -125,9 +125,9 @@ PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, con
 	}
 	ValidateAuthTicketResponse_t rsp = {*(uint64 *)steamID};
 #ifdef WIN32
-	((void (__thiscall *)(void *, void *))*authrsp_ptr)(steam3_ptr, &rsp);
+	((void (__thiscall *)(void *, void *))authrsp_org)(steam3_ptr, &rsp);
 #else
-	((void (*)(void *, void *))*authrsp_ptr)(steam3_ptr, &rsp);
+	((void (*)(void *, void *))authrsp_org)(steam3_ptr, &rsp);
 #endif
 	if(engine->GetPlayerUserId(pEntity)==-1) goto reject;
 	Msg("[L4DToolZ] %llu validated.\n", rsp.id);
@@ -231,18 +231,20 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 	if(!sv_ptr){
 		uint **net = (uint **)interfaceFactory("INETSUPPORT_001", NULL);
 		if(!net) goto err_sv;
-		uint func = net[0][8], **p_sv = *(uint ***)(func+sv_off);
-		if(!CHKPTR(p_sv)) goto err_sv;
-		sv_ptr = p_sv;
-		slots_ptr = (uint *)&p_sv[slots_idx];
-		uint p1 = func+cookie_off, p2 = p_sv[0][steam3_idx]+steam3_off;
+		uint func = net[0][8], **sv = *(uint ***)(func+sv_off);
+		if(!CHKPTR(sv)) goto err_sv;
+		sv_ptr = sv;
+		slots_ptr = (uint *)&sv[slots_idx];
+		uint p1 = func+cookie_off, p2 = sv[0][steam3_idx]+steam3_off;
 		cookie_ptr = GETPTR(READCALL(p1));
-		setmax_ptr = GETPTR(p_sv[0][setmax_idx]);
+		setmax_ptr = GETPTR(sv[0][setmax_idx]);
 		auto sfunc = (uint *(*)(void))READCALL(p2);
-		if(CHKPTR(sfunc)) steam3_ptr = sfunc(); // conn
-		authrsp_ptr = &steam3_ptr[authrsp_idx];
-		authrsp_org = *authrsp_ptr;
-		lobby_req_ptr = (void *)p_sv[0][lobbyreq_idx];
+		if(CHKPTR(sfunc)){
+			steam3_ptr = sfunc(); // conn
+			authrsp_ptr = &steam3_ptr[authrsp_idx];
+			authrsp_org = *authrsp_ptr;
+		}
+		lobby_req_ptr = (void *)sv[0][lobbyreq_idx];
 		read_signature(lobby_req_ptr, lobby_req_new, lobby_req_org);
 	}
 err_sv:
