@@ -12,18 +12,15 @@ const char *lobby_match = "\x06\x55\xB8\x08\x00\x00\x00";
 unsigned char lobby_match_new[] = {0x01, 0x02, '*'};
 
 #define tickint_idx	0x09 // rodata
-#define sv_off		0x17 // bss
+#define sv_off		0x06 // bss
 #define slots_idx	0x5F // sv
-#define cookie_off	0x24
-#define setmax_idx	0x26
+#define cookie_idx	0x5B
+#define maxcl_idx	0x41
 #define steam3_idx	0x41
 #define steam3_off	0x0D
 #define authreq_idx	0x1A // rodata (?)
 #define authrsp_idx	0x24 // bss
 #define lobbyreq_idx	0x3E // rodata
-
-const char *range_check = "\x0C\x8B\x83\xC3\xC3\x00\x00\x39\xD0\x7C\x0B\x8B\x83";
-const char *range_check_new = "\x06\x00\xB8\x20\x00\x00\x00\x90";
 
 const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
 const char *rate_check_new = "\x01\x08\xEB";

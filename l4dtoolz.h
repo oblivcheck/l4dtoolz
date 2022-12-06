@@ -4,9 +4,8 @@
 
 #include "signature.h"
 
-#define CHKPTR(PTR)	(!((uint)PTR&0xF) && PTR>base.addr)
-#define GETPTR(PTR)	(PTR&0xF?NULL:(void *)PTR)
-#define READCALL(PTR)	((PTR+5-1)+*(int *)PTR)
+#define CHKPTR(PTR)	(!((uint)(PTR)&0xF) && (void *)(PTR)>base.addr)
+#define READCALL(PTR)	((PTR+5-1)+*(int *)(PTR))
 
 #pragma pack(push, 1)
 struct ValidateAuthTicketResponse_t{
@@ -22,7 +21,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.0.7, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.1.0_beta, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -37,9 +36,9 @@ public:
 	virtual PLUGIN_RESULT NetworkIDValidated(const char *pszUserName, const char *pszNetworkID){ return PLUGIN_CONTINUE; }
 	virtual void OnQueryCvarValueFinished(QueryCvarCookie_t iCookie, edict_t *pPlayerEntity, EQueryCvarValueStatus eStatus, const char *pCvarName, const char *pCvarValue){ }
 
-	static void Unreserved_f();
-	static void SetMax_f(const CCommand &args);
+	static void Cookie_f(const CCommand &args);
 	static void OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue);
+	static void OnSetMaxCl(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnAntiSharing(IConVar *var, const char *pOldValue, float flOldValue);
 	static void OnForceUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
@@ -56,8 +55,8 @@ private:
 	static void *tickint_org;
 	static void *sv_ptr;
 	static uint *slots_ptr;
-	static void *cookie_ptr;
-	static void *setmax_ptr;
+	static uint64 *cookie_ptr;
+	static uint *maxcl_ptr;
 	static uint *steam3_ptr;
 	static void *authreq_ptr;
 	static void *authreq_org;
@@ -67,8 +66,6 @@ private:
 	static void *info_players_org;
 	static void *lobby_match_ptr;
 	static void *lobby_match_org;
-	static void *range_check_ptr;
-	static void *range_check_org;
 	static void *rate_check_ptr;
 	static void *rate_check_org;
 	static void *rate_set_org;
