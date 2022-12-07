@@ -11,7 +11,7 @@ New: 移除对Metamod平台的依赖,改为Source插件
 ## 2.2 最大玩家数(-1~31)(-1为不做修改)
 `sv_maxplayers <num>`(服务器最多能进多少个玩家)
 ## 2.3 获取/设置大厅
-`sv_cookie`(建议配合动态大厅插件)  
+`sv_cookie`及`sv_lobby_cookie`(建议配合动态大厅插件)  
 移除大厅: `sv_cookie 0`(`sv_allow_lobby_connect_only`自动置0)  
 设置大厅: `sv_cookie <cookie>`(`sv_allow_lobby_connect_only`自动置1)  
 **注意: 不移除大厅会限制最大玩家数为4人(coop模式)**

@@ -54,13 +54,19 @@ void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue
 	write_signature(info_players_ptr, info_players_new);
 }
 
+ConVar sv_lobby_cookie("sv_lobby_cookie", "0", 0);
 void l4dtoolz::Cookie_f(const CCommand &args){
 	if(!cookie_ptr){
 		Msg("[L4DToolZ] sv_cookie init error\n");
 		return;
 	}
+	if(*cookie_ptr){
+		char buf[20];
+		snprintf(buf, sizeof(buf), "%llu", *cookie_ptr);
+		sv_lobby_cookie.SetValue(buf);
+	}
 	if(args.ArgC()!=2){
-		Msg("%llu\n", *cookie_ptr);
+		engine->ServerCommand("sv_lobby_cookie\n");
 		return;
 	}
 	uint64 val = atoll(args[1]);
