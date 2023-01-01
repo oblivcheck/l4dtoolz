@@ -31,6 +31,13 @@ void *l4dtoolz::rate_check_org = NULL;
 void *l4dtoolz::rate_set_org = NULL;
 void *l4dtoolz::lobby_req_ptr = NULL;
 void *l4dtoolz::lobby_req_org = NULL;
+void *l4dtoolz::vomit_fix_buf = NULL;
+void *l4dtoolz::vomit_fix_ptr1 = NULL;
+void *l4dtoolz::vomit_fix_org1 = NULL;
+#ifdef WIN32
+void *l4dtoolz::vomit_fix_ptr2 = NULL;
+void *l4dtoolz::vomit_fix_org2 = NULL;
+#endif
 
 ConVar sv_maxplayers("sv_maxplayers", "-1", 0, "Max human players", true, -1, true, 31, l4dtoolz::OnChangeMax);
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
@@ -221,12 +228,33 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 	ConVar_Register(0);
 
 	mem_info base = {NULL, 0};
+	int tick = GetTick();
+	if(tick!=30) Msg("[L4DToolZ] tickrate: %d\n", tick);
 
 	find_base_from_list(srv_dll, &base);
 	if(!info_players_ptr){
 		info_players_ptr = find_signature(info_players, &base);
 		read_signature(info_players_ptr, info_players_new, info_players_org);
 	}
+	if(tick!=30){
+		vomit_fix_ptr1 = find_signature(vomit_fix, &base);
+		if(!vomit_fix_ptr1 || !(vomit_fix_buf = malloc(0x14))){
+			Msg("[L4DToolZ] vomit_fix init error\n");
+			goto err_vomit;
+		}
+		((float *)vomit_fix_buf)[4] = 1.0/30; // 0x10
+		*(uint *)&vomit_fix_new[3] = (uint)vomit_fix_buf;
+		read_signature(vomit_fix_ptr1, vomit_fix_new, vomit_fix_org1);
+		write_signature(vomit_fix_ptr1, vomit_fix_new);
+	#ifdef WIN32
+		base.len -= (uint)vomit_fix_ptr1+1-(uint)base.addr;
+		base.addr = (void *)((uint)vomit_fix_ptr1+1);
+		vomit_fix_ptr2 = find_signature(vomit_fix, &base);
+		read_signature(vomit_fix_ptr2, vomit_fix_new, vomit_fix_org2);
+		write_signature(vomit_fix_ptr2, vomit_fix_new);
+	#endif
+	}
+err_vomit:
 
 	find_base_from_list(mat_dll, &base);
 	if(!lobby_match_ptr){
@@ -253,9 +281,7 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 	}
 err_sv:
 
-	int tick = GetTick();
 	if(tick==30) return true;
-	Msg("[L4DToolZ] tickrate: %d\n", tick);
 	if(!tickint_ptr){
 		auto game = (uint **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
 		tickint_ptr = &game[0][tickint_idx];
@@ -292,4 +318,12 @@ void l4dtoolz::Unload(){
 	free_signature(authreq_ptr, authreq_org);
 	free_signature(tickint_ptr, tickint_org);
 	free_signature(lobby_req_ptr, lobby_req_org);
+	if(vomit_fix_buf){
+		free_signature(vomit_fix_ptr1, vomit_fix_org1);
+	#ifdef WIN32
+		free_signature(vomit_fix_ptr2, vomit_fix_org2);
+	#endif
+		free(vomit_fix_buf);
+		vomit_fix_buf = NULL;
+	}
 }

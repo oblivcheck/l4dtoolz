@@ -27,4 +27,7 @@ const char *rate_check_new = "\x02\x03\x90\x90";
 unsigned char rate_set_new[] = {0x07, 0x05, 0xB8, '*', '*', '*', '*', 0x90, 0x90};
 
 const char *lobby_req_new = "\x03\x00\xC2\x08\x00"; // stack balance
+
+const char *vomit_fix = "\x10\xA1\xC3\xC3\xC3\xC3\x89\xC3\xC3\x89\xC3\xC3\xF3\x0F\x10\x40\x10";
+unsigned char vomit_fix_new[] = {0x05, 0x00, 0xB8, '*', '*', '*', '*'};
 #endif // _INCLUDE_L4D2_SIGNATURE_WIN32_

@@ -27,4 +27,7 @@ const char *rate_check_new = "\x01\x08\xEB";
 unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
 
 const char *lobby_req_new = "\x01\x00\xC3";
+
+const char *vomit_fix = "\x0D\xA1\xC3\xC3\xC3\xC3\xF3\x0F\x10\x40\x10\xF3\x0F\x59";
+unsigned char vomit_fix_new[] = {0x05, 0x00, 0xB8, '*', '*', '*', '*'};
 #endif // _INCLUDE_L4D2_SIGNATURE_LINUX_
