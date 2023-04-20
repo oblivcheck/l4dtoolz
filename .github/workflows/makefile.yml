@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -33,10 +33,10 @@ jobs:
 
     - name: Compiling L4DToolZ
       working-directory: l4dtoolz
-      run: make
+      run: make all
 
     - name: Uploading L4DToolZ
       uses: actions/upload-artifact@v3
       with:
         name: L4DToolZ-linux
-        path: l4dtoolz/Release.left4dead2/l4dtoolz.so
+        path: l4dtoolz/Release/l4dtoolz.so

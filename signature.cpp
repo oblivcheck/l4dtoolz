@@ -17,7 +17,7 @@
 
 void *get_func(void *addr, const char *func){
 #ifdef WIN32
-	return GetProcAddress((HMODULE)addr, func);
+	return (void *)GetProcAddress((HMODULE)addr, func);
 #else
 	void *result = NULL;
 	Dl_info info;
