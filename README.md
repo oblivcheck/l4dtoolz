@@ -26,7 +26,6 @@
 - 在启动项中添加`-tickrate <tick>`,不设置则不做修改
 - **注意: 如通过plugin_load指令手动加载本扩展,可能出现tickrate异常问题**
 ### 2.1 相关CVar
-- 废弃(存在但改了不会有效果): `sv_maxrate`及`sv_minrate`
 - 需要修改(写到server.cfg,部分cvar需要sm_cvar前缀):
 - `sv_minupdaterate`,`sv_maxupdaterate`,`sv_mincmdrate`,`sv_maxcmdrate`,
 - `nb_update_frequency`,`sv_client_min_interp_ratio`,`fps_max`,

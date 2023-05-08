@@ -12,6 +12,8 @@ const char *lobby_match = "\x06\x55\xB8\x08\x00\x00\x00";
 unsigned char lobby_match_new[] = {0x01, 0x02, '*'};
 
 #define tickint_idx	0x09 // rodata
+#define rateset_idx	0x1D // rodata
+#define rate_idx	0x2C
 #define sv_off		0x06 // bss
 #define slots_idx	0x5F // sv
 #define cookie_idx	0x5B
@@ -22,11 +24,7 @@ unsigned char lobby_match_new[] = {0x01, 0x02, '*'};
 #define authrsp_idx	0x24 // bss
 #define lobbyreq_idx	0x3E // rodata
 
-const char *rate_check = "\x09\xF3\x0F\x10\x45\x0C\x0F\x2F\xC8\x72";
-const char *rate_check_new = "\x01\x08\xEB";
-unsigned char rate_set_new[] = {0x04, 0xFA, '*', '*', '*', '*'};
-
-const char *lobby_req_new = "\x01\x00\xC3";
+unsigned char lobby_req_new[] = {0x04, 0x00, '*', '*', '*', '*'};
 
 const char *vomit_fix = "\x0D\xA1\xC3\xC3\xC3\xC3\xF3\x0F\x10\x40\x10\xF3\x0F\x59";
 unsigned char vomit_fix_new[] = {0x05, 0x00, 0xB8, '*', '*', '*', '*'};

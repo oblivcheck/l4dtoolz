@@ -21,7 +21,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.0, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.1_beta, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -44,10 +44,8 @@ public:
 	static void OnForceUnreserved(IConVar *var, const char *pOldValue, float flOldValue);
 
 #ifdef WIN32
-	static int PreAuth(const void *, int, uint64);
 	static void PostAuth(ValidateAuthTicketResponse_t *);
 #else
-	static int PreAuth(void *, const void *, int, uint64);
 	static void PostAuth(void *, ValidateAuthTicketResponse_t *);
 #endif
 private:
@@ -66,11 +64,10 @@ private:
 	static void *info_players_org;
 	static void *lobby_match_ptr;
 	static void *lobby_match_org;
-	static void *rate_check_ptr;
-	static void *rate_check_org;
-	static void *rate_set_org;
 	static void *lobby_req_ptr;
 	static void *lobby_req_org;
+	static void *rate_set_ptr;
+	static void *rate_set_org;
 	static void *vomit_fix_buf;
 	static void *vomit_fix_ptr1;
 	static void *vomit_fix_org1;

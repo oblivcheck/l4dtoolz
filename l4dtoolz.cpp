@@ -26,11 +26,10 @@ void *l4dtoolz::info_players_ptr = NULL;
 void *l4dtoolz::info_players_org = NULL;
 void *l4dtoolz::lobby_match_ptr = NULL;
 void *l4dtoolz::lobby_match_org = NULL;
-void *l4dtoolz::rate_check_ptr = NULL;
-void *l4dtoolz::rate_check_org = NULL;
-void *l4dtoolz::rate_set_org = NULL;
 void *l4dtoolz::lobby_req_ptr = NULL;
 void *l4dtoolz::lobby_req_org = NULL;
+void *l4dtoolz::rate_set_ptr = NULL;
+void *l4dtoolz::rate_set_org = NULL;
 void *l4dtoolz::vomit_fix_buf = NULL;
 void *l4dtoolz::vomit_fix_ptr1 = NULL;
 void *l4dtoolz::vomit_fix_org1 = NULL;
@@ -102,10 +101,33 @@ void l4dtoolz::LevelInit(char const *){
 	if(slots>=0) *slots_ptr = slots;
 }
 
+int GetTick(){
+	static int tick = CommandLine()->ParmValue("-tickrate", 30);
+	return tick;
+}
+
+// Linux: float GetTickInterval(void *);
+float GetTickInterval(){
+	static float tickinv = 1.0/GetTick();
+	return tickinv;
+}
+
 #ifdef WIN32
-int l4dtoolz::PreAuth(const void *, int, uint64 steamID){
+__declspec(naked) void SetDataRate(float){
+	uint* obj;
+	__asm mov obj, ecx
+	obj[rate_idx] = GetTick()*1000;
+	__asm retn 4
 #else
-int l4dtoolz::PreAuth(void *, const void *, int, uint64 steamID){
+void SetDataRate(uint *obj, float){
+	obj[rate_idx] = GetTick()*1000;
+#endif
+}
+
+#ifdef WIN32
+int PreAuth(const void *, int, uint64 steamID){
+#else
+int PreAuth(void *, const void *, int, uint64 steamID){
 #endif
 	if(!steamID){
 		Msg("[L4DToolZ] invalid steamID.\n");
@@ -131,7 +153,7 @@ void l4dtoolz::OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValu
 		auto gsv = (uint **)steam3_ptr[1];
 		if(!gsv) goto err_bypass;
 		authreq_ptr = &gsv[0][authreq_idx];
-		*(uint *)&authreq_new[2] = (uint)&l4dtoolz::PreAuth;
+		*(uint *)&authreq_new[2] = (uint)&PreAuth;
 		read_signature(authreq_ptr, authreq_new, authreq_org);
 	}
 	if(new_value) write_signature(authreq_ptr, authreq_new);
@@ -139,6 +161,16 @@ void l4dtoolz::OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValu
 }
 
 PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *, const char *, char *, int){
+	if(!rate_set_ptr && GetTick()!=30){
+		auto net = engine->GetPlayerNetInfo(1);
+		if(net){
+			rate_set_ptr = &((uint **)net)[0][rateset_idx];
+			unsigned char rate_set_new[6] = {0x04, 0x00};
+			*(uint *)&rate_set_new[2] = (uint)&SetDataRate;
+			read_signature(rate_set_ptr, rate_set_new, rate_set_org);
+			write_signature(rate_set_ptr, rate_set_new);
+		}
+	}
 	if(sv_steam_bypass.GetInt()!=1) return PLUGIN_CONTINUE;
 	const CSteamID *steamID = engine->GetClientSteamID(pEntity);
 	if(!steamID){
@@ -188,8 +220,13 @@ void l4dtoolz::OnAntiSharing(IConVar *var, const char *pOldValue, float flOldVal
 	int new_value = ((ConVar *)var)->GetInt();
 	int old_value = atoi(pOldValue);
 	if(new_value==old_value) return;
-	if(new_value) *authrsp_ptr = (uint)&l4dtoolz::PostAuth;
+	if(new_value) *authrsp_ptr = (uint)&PostAuth;
 	else *authrsp_ptr = authrsp_org;
+}
+
+// Linux: void ReplyReservationRequest(void *, void *, void *);
+void ReplyReservationRequest(void *, void *){
+	return;
 }
 
 ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation", true, 0, true, 1, l4dtoolz::OnForceUnreserved);
@@ -208,16 +245,6 @@ void l4dtoolz::OnForceUnreserved(IConVar *var, const char *pOldValue, float flOl
 		return;
 	}
 	write_signature(lobby_req_ptr, lobby_req_org);
-}
-
-int GetTick(){
-	static int tick = CommandLine()->ParmValue("-tickrate", 30);
-	return tick;
-}
-
-float GetTickInterval(){
-	static float tickint = 1.0/GetTick();
-	return tickint;
 }
 
 bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
@@ -276,7 +303,8 @@ err_vomit:
 			authrsp_ptr = &steam3_ptr[authrsp_idx];
 			authrsp_org = *authrsp_ptr;
 		}
-		lobby_req_ptr = (void *)sv[0][lobbyreq_idx];
+		lobby_req_ptr = &sv[0][lobbyreq_idx];
+		*(uint *)&lobby_req_new[2] = (uint)&ReplyReservationRequest;
 		read_signature(lobby_req_ptr, lobby_req_new, lobby_req_org);
 	}
 err_sv:
@@ -290,19 +318,7 @@ err_sv:
 		read_signature(tickint_ptr, tickint_new, tickint_org);
 		write_signature(tickint_ptr, tickint_new);
 	}
-	if(!rate_check_ptr){
-		rate_check_ptr = find_signature(rate_check, &base);
-		read_signature(rate_check_ptr, rate_check_new, rate_check_org);
-		write_signature(rate_check_ptr, rate_check_new);
-		read_signature(rate_check_ptr, rate_set_new, rate_set_org);
-	#ifdef WIN32
-		*(uint *)&rate_set_new[3] = tick*1000;
-	#else
-		*(uint *)&rate_set_new[2] = tick*1000;
-	#endif
-		write_signature(rate_check_ptr, rate_set_new); // sd
-		((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
-	}
+	((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
 	return true;
 }
 
@@ -313,11 +329,10 @@ void l4dtoolz::Unload(){
 	if(authrsp_ptr) *authrsp_ptr = authrsp_org;
 	free_signature(info_players_ptr, info_players_org);
 	free_signature(lobby_match_ptr, lobby_match_org);
-	free_signature(rate_check_ptr, rate_check_org);
-	free_signature(rate_check_ptr, rate_set_org);
 	free_signature(authreq_ptr, authreq_org);
 	free_signature(tickint_ptr, tickint_org);
 	free_signature(lobby_req_ptr, lobby_req_org);
+	free_signature(rate_set_ptr, rate_set_org);
 	if(vomit_fix_buf){
 		free_signature(vomit_fix_ptr1, vomit_fix_org1);
 	#ifdef WIN32
