@@ -4,7 +4,8 @@
 
 #include "signature.h"
 
-#define CHKPTR(PTR)	(!((uint)(PTR)&0xF) && (void *)(PTR)>base.addr)
+#define CHKPTR(PTR, V)	(PTR && !((uint)(PTR)&V))
+#define CMPPTR(PTR, V)	(CHKPTR(PTR, V) && (void *)(PTR)>base.addr)
 #define READCALL(PTR)	((PTR+5-1)+*(int *)(PTR))
 
 #pragma pack(push, 1)
@@ -21,7 +22,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.1_beta, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.3, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -49,25 +50,26 @@ public:
 	static void PostAuth(void *, ValidateAuthTicketResponse_t *);
 #endif
 private:
-	static uint *tickint_ptr;
-	static void *tickint_org;
 	static void *sv_ptr;
 	static uint *slots_ptr;
 	static uint64 *cookie_ptr;
 	static uint *maxcl_ptr;
+	static uint *gamerules_ptr;
+	static void *rules_max_ptr;
+	static void *rules_max_org;
+	static void *dsp_max_ptr;
+	static void *dsp_max_org;
+	static void *lobby_req_ptr;
+	static void *lobby_req_org;
 	static uint *steam3_ptr;
 	static void *authreq_ptr;
 	static void *authreq_org;
 	static uint *authrsp_ptr;
 	static uint authrsp_org;
-	static void *info_players_ptr;
-	static void *info_players_org;
-	static void *lobby_match_ptr;
-	static void *lobby_match_org;
-	static void *lobby_req_ptr;
-	static void *lobby_req_org;
-	static void *rate_set_ptr;
-	static void *rate_set_org;
+	static uint *tickint_ptr;
+	static void *tickint_org;
+	static void *set_rate_ptr;
+	static void *set_rate_org;
 	static void *vomit_fix_buf;
 	static void *vomit_fix_ptr1;
 	static void *vomit_fix_org1;
