@@ -1,12 +1,9 @@
 name: build
 
-on:
-  push:
-    branches: [ "main" ]
+on: [push]
 
 jobs:
-  build:
-    name: linux
+  build_linux:
     runs-on: ubuntu-20.04
     steps:
     - name: Prepare env
@@ -19,24 +16,55 @@ jobs:
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 100
 
-    - name: Checking out hl2sdk-l4d2
+    - name: Checkout hl2sdk-l4d2
       uses: actions/checkout@v3
       with:
-        repository: alliedmodders/hl2sdk
-        ref: l4d2
+        repository: lakwsh/hl2sdk-l4d2
         path: hl2sdk-l4d2
 
-    - name: Checking out L4DToolZ
+    - name: Checkout code
       uses: actions/checkout@v3
       with:
         path: l4dtoolz
 
-    - name: Compiling L4DToolZ
+    - name: Build L4DToolZ
       working-directory: l4dtoolz
       run: make all
 
-    - name: Uploading L4DToolZ
+    - name: Upload L4DToolZ
       uses: actions/upload-artifact@v3
       with:
-        name: L4DToolZ-linux
+        name: l4dtoolz.zip
         path: l4dtoolz/Release/l4dtoolz.so
+
+
+  build_windows:
+    runs-on: windows-2022
+    steps:
+    - name: Checkout hl2sdk-l4d2
+      uses: actions/checkout@v3
+      with:
+        repository: lakwsh/hl2sdk-l4d2
+        path: hl2sdk-l4d2
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        path: l4dtoolz
+
+    - name: Setup msbuild
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Build hl2sdk
+      working-directory: hl2sdk-l4d2
+      run: msbuild tier1\tier1-2005.vcxproj /p:Configuration=Release /p:Platform=Win32 -maxcpucount:8
+
+    - name: Build L4DToolZ
+      working-directory: l4dtoolz
+      run: msbuild l4dtoolz.vcxproj /p:Configuration=Release /p:Platform=Win32 -maxcpucount:8
+
+    - name: Upload L4DToolZ
+      uses: actions/upload-artifact@v3
+      with:
+        name: l4dtoolz.zip
+        path: l4dtoolz/Release/l4dtoolz.dll

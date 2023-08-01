@@ -138,7 +138,7 @@ void write_signature(void *addr, const void *sign){
 	mlock(pa_addr, size);
 	mprotect(pa_addr, size, PROT_READ|PROT_WRITE|PROT_EXEC);
 	memcpy(dst, src, len);
-	mprotect(pa_addr, size, PROT_READ|PROT_EXEC); // restore
+	//mprotect(pa_addr, size, PROT_READ|PROT_EXEC); // restore
 	munlock(pa_addr, size);
 #endif
 }
