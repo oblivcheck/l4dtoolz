@@ -1,6 +1,6 @@
 # L4DToolZ
 ### [English Version](https://github.com/lakwsh/l4dtoolz/blob/main/README_EN.md)
-- 安装方法: [下载](https://github.com/lakwsh/l4dtoolz/releases/latest)并解压到addons文件夹
+- 安装方法: [下载](https://github.com/lakwsh/l4dtoolz/actions?query=branch%3Amain)并解压到addons文件夹
 - **如使用tickrate解锁功能,请删除tickrate_enabler**
 - 遇到任何问题请先在**服务器控制台**输入`plugin_print`确认扩展已经正确加载
 
