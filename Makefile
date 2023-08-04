@@ -45,7 +45,7 @@ else
 endif
 
 
-CFLAGS += -std=c++14
+CFLAGS += -std=c++11
 
 LINK += $(HL2LIB)/tier1_i486.a $(LIB_PREFIX)vstdlib$(LIB_SUFFIX) $(LIB_PREFIX)tier0$(LIB_SUFFIX)
 

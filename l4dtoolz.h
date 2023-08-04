@@ -16,13 +16,19 @@ struct ValidateAuthTicketResponse_t{
 };
 #pragma pack(pop)
 
+struct netadr_s{
+	int	type;
+	unsigned char	ip[4];
+	unsigned short	port;
+};
+
 class l4dtoolz:public IServerPluginCallbacks{
 public:
 	virtual bool Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory);
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.3, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4beta, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -49,6 +55,7 @@ public:
 #else
 	static void PostAuth(void *, ValidateAuthTicketResponse_t *);
 #endif
+	static void ConnectionStart(uint ***);
 private:
 	static void *sv_ptr;
 	static uint *slots_ptr;
@@ -79,3 +86,11 @@ private:
 #endif
 };
 extern l4dtoolz g_l4dtoolz;
+
+class Handler{
+public:
+	virtual	~Handler(){ }
+	virtual void ConnectionStart(uint ***chan){ l4dtoolz::ConnectionStart(chan); }
+	virtual void ConnectionClosing(const char *){ }
+	virtual void ConnectionCrashed(const char *){ }
+};

@@ -152,15 +152,6 @@ void l4dtoolz::OnBypassAuth(IConVar *var, const char *pOldValue, float flOldValu
 ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", true, 0, true, 1, l4dtoolz::OnBypassAuth);
 
 PLUGIN_RESULT l4dtoolz::ClientConnect(bool *bAllowConnect, edict_t *pEntity, const char *, const char *, char *, int){
-	if(!set_rate_ptr && tickrate!=30){
-		auto net = engine->GetPlayerNetInfo(1);
-		if(net){
-			set_rate_ptr = ((uint ***)net)[0][setrate_idx];
-			read_signature(set_rate_ptr, set_rate_new, set_rate_org);
-			*(uint *)&set_rate_new[3] = tickrate*1000;
-			write_signature(set_rate_ptr, set_rate_new);
-		}
-	}
 	if(sv_steam_bypass.GetInt()!=1) return PLUGIN_CONTINUE;
 	const CSteamID *steamID = engine->GetClientSteamID(pEntity);
 	if(!steamID){
@@ -237,6 +228,14 @@ void l4dtoolz::OnForceUnreserved(IConVar *var, const char *pOldValue, float flOl
 }
 ConVar sv_force_unreserved("sv_force_unreserved", "0", 0, "Disallow lobby reservation", true, 0, true, 1, l4dtoolz::OnForceUnreserved);
 
+void l4dtoolz::ConnectionStart(uint ***chan){
+	set_rate_ptr = chan[0][setrate_idx];
+	read_signature(set_rate_ptr, set_rate_new, set_rate_org);
+	*(uint *)&set_rate_new[3] = tickrate*1000;
+	write_signature(set_rate_ptr, set_rate_new);
+	Msg("[L4DToolZ] tickrate: %d\n", tickrate);
+}
+
 bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameServerFactory){
 	engine = (IVEngineServer *)interfaceFactory(INTERFACEVERSION_VENGINESERVER, NULL);
 	icvar = (ICvar *)interfaceFactory(CVAR_INTERFACE_VERSION, NULL);
@@ -311,7 +310,13 @@ err_sv:
 		write_signature(tickint_ptr, tickint_new);
 	}
 	((uint *)icvar->FindVar("net_splitpacket_maxrate"))[15] = false; // m_bHasMax
-	Msg("[L4DToolZ] tickrate: %d\n", tickrate);
+	auto net = (uint **)interfaceFactory("INETSUPPORT_001", NULL);
+	netadr_s adr = {3, 0, 0};
+#ifdef WIN32
+	((void (__thiscall *)(void *, int, netadr_s *, const char *, Handler *))net[0][12])(net, 99, &adr, "l4dtoolz", new Handler);
+#else
+	((void (*)(void *, int, netadr_s *, const char *, Handler *))net[0][12])(net, 99, &adr, "l4dtoolz", new Handler);
+#endif
 	return true;
 }
 
