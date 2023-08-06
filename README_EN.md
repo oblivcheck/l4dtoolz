@@ -46,7 +46,7 @@
 
 ## 5. Key Features
 ### 5.1 More Reliable
-- Compared with the original l4dtoolz and tickrate_enabler, it almost doesn't depend on signatures.
+- Compared with the original l4dtoolz and tickrate_enabler, it does not rely on signatures at all.
 - It uses offset addressing, the probability of this extension being invalid due to game updates is low.
 - Most features are rewritten, greatly improving reliability.
 ### 5.2 Dynamically Modifiable MaxClients
@@ -55,3 +55,6 @@
 ## 6. Recommended Plugins
 #### [Pure Multiplayer & Dynamic Lobby Plugin (Optional)](https://github.com/lakwsh/l4d2_rmc)
 - Functions: Automatically removes lobby, allows voting to set the maximum number of players.
+#### [Boomer Vomit Distance Fix Plugin](https://github.com/lakwsh/l4d2_vomit_fix)
+- Function: Fixes the issue of shortened Boomer vomit distance in versus mode when tickrate is above 30.
+- This functionality has been separated into a plugin starting from version 2.2.4.

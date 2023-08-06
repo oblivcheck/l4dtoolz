@@ -4,9 +4,9 @@
 
 #include "signature.h"
 
-#define CHKPTR(PTR, V)	(PTR && !((uint)(PTR)&V))
-#define CMPPTR(PTR, V)	(CHKPTR(PTR, V) && (void *)(PTR)>base.addr)
-#define READCALL(PTR)	((PTR+5-1)+*(int *)(PTR))
+#define CHKPTR(P, V)	(P && !((uint)(P)&V))
+#define CMPPTR(P, V, C)	(CHKPTR(P, V) && !((uint)P>>24^(uint)C>>24))
+#define READCALL(P)	((P+5-1)+*(int *)(P))
 
 #pragma pack(push, 1)
 struct ValidateAuthTicketResponse_t{
@@ -17,9 +17,9 @@ struct ValidateAuthTicketResponse_t{
 #pragma pack(pop)
 
 struct netadr_s{
-	int	type;
-	unsigned char	ip[4];
-	unsigned short	port;
+	int type;
+	unsigned char ip[4];
+	unsigned short port;
 };
 
 class l4dtoolz:public IServerPluginCallbacks{
@@ -28,7 +28,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4beta, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName);
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
 	virtual void GameFrame(bool simulating){ }
@@ -77,13 +77,6 @@ private:
 	static void *tickint_org;
 	static void *set_rate_ptr;
 	static void *set_rate_org;
-	static void *vomit_fix_buf;
-	static void *vomit_fix_ptr1;
-	static void *vomit_fix_org1;
-#ifdef WIN32
-	static void *vomit_fix_ptr2;
-	static void *vomit_fix_org2;
-#endif
 };
 extern l4dtoolz g_l4dtoolz;
 

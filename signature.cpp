@@ -9,12 +9,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <link.h>
+
+static uint pmask = ~(sysconf(_SC_PAGESIZE)-1);
 #endif
 
 #define HEADER_LEN	2
 #define LEN_BYTE	0
 #define OFF_BYTE	1
 
+/*
 void *get_func(void *addr, const char *func){
 #ifdef WIN32
 	return (void *)GetProcAddress((HMODULE)addr, func);
@@ -33,8 +36,6 @@ void *get_func(void *addr, const char *func){
 }
 
 #ifndef WIN32
-static uint pmask = ~(sysconf(_SC_PAGESIZE)-1);
-
 typedef struct{
 	const char *name;
 	mem_info *base;
@@ -108,6 +109,7 @@ void *find_signature(const char *mask, mem_info *base, bool pure){
 #endif
 	return NULL;
 }
+*/
 
 void read_signature(void *addr, const void *new_sign, void *&org_sign){
 	if(!addr) return;

@@ -46,7 +46,7 @@
 
 ## 5. 主要特色
 ### 5.1 更可靠
-- 相比于原版l4dtoolz和tickrate_enabler几乎不依赖签名
+- 相比于原版l4dtoolz和tickrate_enabler完全不依赖签名
 - 采用偏移方式寻址,游戏更新此扩展失效的几率低
 - 重写大部分功能实现方式,大幅提高可靠性
 ### 5.2 MaxClients可动态修改
@@ -55,3 +55,6 @@
 ## 6. 推荐插件
 #### [配套纯净多人&动态大厅插件(可选)](https://github.com/lakwsh/l4d2_rmc)
 - 功能: 自动移除大厅、允许投票设置最大玩家数
+#### [Boomer喷吐距离修复插件](https://github.com/lakwsh/l4d2_vomit_fix)
+- 功能: 修复高于30tick情况下对抗模式出现Boomer喷吐距离变短问题
+- 该功能自2.2.4版本开始拆分为插件方式实现

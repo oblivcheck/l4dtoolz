@@ -32,13 +32,6 @@ uint *l4dtoolz::tickint_ptr = NULL;
 void *l4dtoolz::tickint_org = NULL;
 void *l4dtoolz::set_rate_ptr = NULL;
 void *l4dtoolz::set_rate_org = NULL;
-void *l4dtoolz::vomit_fix_buf = NULL;
-void *l4dtoolz::vomit_fix_ptr1 = NULL;
-void *l4dtoolz::vomit_fix_org1 = NULL;
-#ifdef WIN32
-void *l4dtoolz::vomit_fix_ptr2 = NULL;
-void *l4dtoolz::vomit_fix_org2 = NULL;
-#endif
 
 void l4dtoolz::OnChangeMax(IConVar *var, const char *pOldValue, float flOldValue){
 	if(!slots_ptr){
@@ -244,52 +237,20 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 	ConnectTier1Libraries(&interfaceFactory, 1);
 	ConVar_Register(0);
 
-	mem_info base = {NULL, 0};
-
-	find_base_from_list(srv_dll, &base);
 	if(!gamerules_ptr){
 		auto client = (uint **)gameServerFactory("ServerGameClients003", NULL);
 		auto gamerules = *(uint **)(client[0][18]+info_off);
-		if(CMPPTR(gamerules, 0x3)) gamerules_ptr = gamerules;
+		if(CMPPTR(gamerules, 0x3, gameServerFactory)) gamerules_ptr = gamerules;
 	}
-	if(tickrate!=30){
-		vomit_fix_ptr1 = find_signature(vomit_fix, &base);
-		if(!vomit_fix_ptr1 || !(vomit_fix_buf = malloc(0x14))){
-			Msg("[L4DToolZ] vomit_fix init error\n");
-			goto err_vomit;
-		}
-		((float *)vomit_fix_buf)[4] = 1.0/30; // 0x10
-		*(uint *)&vomit_fix_new[3] = (uint)vomit_fix_buf;
-		read_signature(vomit_fix_ptr1, vomit_fix_new, vomit_fix_org1);
-		write_signature(vomit_fix_ptr1, vomit_fix_new);
-	#ifdef WIN32
-		base.len -= (uint)vomit_fix_ptr1+1-(uint)base.addr;
-		base.addr = (void *)((uint)vomit_fix_ptr1+1);
-		vomit_fix_ptr2 = find_signature(vomit_fix, &base);
-		read_signature(vomit_fix_ptr2, vomit_fix_new, vomit_fix_org2);
-		write_signature(vomit_fix_ptr2, vomit_fix_new);
-	#endif
-	}
-err_vomit:
-
-	//find_base_from_list(mat_dll, &base);
-	if(!dsp_max_ptr){
-		auto match = (uint **)interfaceFactory("MATCHFRAMEWORK_001", NULL);
-		auto title = ((uint ***(*)())match[0][8])();
-		dsp_max_ptr = title[0][4];
-		read_signature(dsp_max_ptr, max_player_new, dsp_max_org);
-	}
-
-	find_base_from_list(eng_dll, &base);
 	if(!sv_ptr){
 		uint **sv = *(uint ***)(((uint **)engine)[0][0x80]+sv_off);
-		if(!CMPPTR(sv, 0xf)) goto err_sv;
+		if(!CMPPTR(sv, 0xf, interfaceFactory)) goto err_sv;
 		sv_ptr = sv;
 		slots_ptr = (uint *)&sv[slots_idx];
 		cookie_ptr = (uint64 *)&sv[cookie_idx];
 		maxcl_ptr = (uint *)&sv[maxcl_idx];
 		auto sfunc = (uint *(*)(void))READCALL(sv[0][steam3_idx]+steam3_off);
-		if(CMPPTR(sfunc, 0xf)){
+		if(CMPPTR(sfunc, 0xf, interfaceFactory)){
 			steam3_ptr = sfunc(); // conn
 			authrsp_ptr = &steam3_ptr[authrsp_idx];
 			authrsp_org = *authrsp_ptr;
@@ -299,6 +260,12 @@ err_vomit:
 		*(uint *)&lobby_req_new[2] = (uint)&ReplyReservationRequest;
 	}
 err_sv:
+	if(!dsp_max_ptr){
+		auto match = (uint **)interfaceFactory("MATCHFRAMEWORK_001", NULL);
+		auto title = ((uint ***(*)())match[0][8])();
+		dsp_max_ptr = title[0][4];
+		read_signature(dsp_max_ptr, max_player_new, dsp_max_org);
+	}
 
 	if(tickrate==30) return true;
 	if(!tickint_ptr){
@@ -331,12 +298,4 @@ void l4dtoolz::Unload(){
 	free_signature(lobby_req_ptr, lobby_req_org);
 	free_signature(tickint_ptr, tickint_org);
 	free_signature(set_rate_ptr, set_rate_org);
-	if(vomit_fix_buf){
-		free_signature(vomit_fix_ptr1, vomit_fix_org1);
-	#ifdef WIN32
-		free_signature(vomit_fix_ptr2, vomit_fix_org2);
-	#endif
-		free(vomit_fix_buf);
-		vomit_fix_buf = NULL;
-	}
 }
