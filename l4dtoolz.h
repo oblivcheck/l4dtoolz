@@ -7,6 +7,10 @@
 #define CHKPTR(P, V)	(P && !((uint)(P)&V))
 #define CMPPTR(P, V, C)	(CHKPTR(P, V) && !((uint)P>>24^(uint)C>>24))
 #define READCALL(P)	((P+5-1)+*(int *)(P))
+#define CHKVAL \
+	int new_value = ((ConVar *)var)->GetInt(); \
+	int old_value = atoi(pOldValue); \
+	if(new_value==old_value) return;
 
 #pragma pack(push, 1)
 struct ValidateAuthTicketResponse_t{
@@ -28,9 +32,9 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4, https://github.com/lakwsh/l4dtoolz"; }
-	virtual void LevelInit(char const *pMapName);
-	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax){ }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4p1, https://github.com/lakwsh/l4dtoolz"; }
+	virtual void LevelInit(char const *pMapName){ }
+	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
 	virtual void GameFrame(bool simulating){ }
 	virtual void LevelShutdown(){ }
 	virtual void ClientActive(edict_t *pEntity){ }
