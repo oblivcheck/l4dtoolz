@@ -4,11 +4,11 @@
 
 #ifdef WIN32
 #include <windows.h>
-#include <TlHelp32.h>
+//#include <TlHelp32.h>
 #else
 #include <sys/mman.h>
 #include <unistd.h>
-#include <link.h>
+//#include <link.h>
 
 static uint pmask = ~(sysconf(_SC_PAGESIZE)-1);
 #endif

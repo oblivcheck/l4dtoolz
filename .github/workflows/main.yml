@@ -1,7 +1,9 @@
-name: build
+name: l4dtoolz
 
 on:
   push:
+    branches:
+      - 'main'
     paths-ignore:
       - '**.md'
 

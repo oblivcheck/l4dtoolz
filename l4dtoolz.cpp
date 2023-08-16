@@ -12,7 +12,6 @@ IVEngineServer *engine = NULL;
 ICvar *icvar = NULL;
 uint tickrate = 30;
 
-void *l4dtoolz::sv_ptr = NULL;
 uint *l4dtoolz::slots_ptr = NULL;
 uint64 *l4dtoolz::cookie_ptr = NULL;
 uint *l4dtoolz::maxcl_ptr = NULL;
@@ -233,10 +232,9 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
 		auto gamerules = *(uint **)(client[0][18]+info_off);
 		if(CMPPTR(gamerules, 0x3, gameServerFactory)) gamerules_ptr = gamerules;
 	}
-	if(!sv_ptr){
+	if(!slots_ptr){
 		uint **sv = *(uint ***)(((uint **)engine)[0][0x80]+sv_off);
 		if(!CMPPTR(sv, 0xf, interfaceFactory)) goto err_sv;
-		sv_ptr = sv;
 		slots_ptr = (uint *)&sv[slots_idx];
 		cookie_ptr = (uint64 *)&sv[cookie_idx];
 		maxcl_ptr = (uint *)&sv[maxcl_idx];

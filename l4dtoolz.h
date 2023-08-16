@@ -61,7 +61,6 @@ public:
 #endif
 	static void ConnectionStart(uint ***);
 private:
-	static void *sv_ptr;
 	static uint *slots_ptr;
 	static uint64 *cookie_ptr;
 	static uint *maxcl_ptr;
