@@ -4,8 +4,9 @@
 
 #include "signature.h"
 
+#define BINMSIZE	0x1400000 // 20M
 #define CHKPTR(P, V)	(P && !((uint)(P)&V))
-#define CMPPTR(P, V, C)	(CHKPTR(P, V) && !((uint)P>>24^(uint)C>>24))
+#define CMPPTR(P, V, C)	(CHKPTR(P, V) && abs((int)P-(int)C)<BINMSIZE)
 #define READCALL(P)	((P+5-1)+*(int *)(P))
 #define CHKVAL \
 	int new_value = ((ConVar *)var)->GetInt(); \
@@ -32,7 +33,7 @@ public:
 	virtual void Unload();
 	virtual void Pause(){ }
 	virtual void UnPause(){ }
-	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4p1, https://github.com/lakwsh/l4dtoolz"; }
+	virtual const char *GetPluginDescription(){ return "L4DToolZ v2.2.4p3, https://github.com/lakwsh/l4dtoolz"; }
 	virtual void LevelInit(char const *pMapName){ }
 	virtual void ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
 	virtual void GameFrame(bool simulating){ }

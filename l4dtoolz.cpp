@@ -98,16 +98,16 @@ void l4dtoolz::ServerActivate(edict_t *, int, int){
 	if(slots>=0) write_signature(rules_max_ptr, max_player_new);
 }
 
-// Linux: float GetTickInterval(void *);
-float GetTickInterval(){
+// Linux: static float GetTickInterval(void *);
+static float GetTickInterval(){
 	static float tickinv = 1.0/tickrate;
 	return tickinv;
 }
 
 #ifdef WIN32
-int PreAuth(const void *, int, uint64 steamID){
+static int PreAuth(const void *, int, uint64 steamID){
 #else
-int PreAuth(void *, const void *, int, uint64 steamID){
+static int PreAuth(void *, const void *, int, uint64 steamID){
 #endif
 	if(!steamID){
 		Msg("[L4DToolZ] invalid steamID.\n");
@@ -190,8 +190,8 @@ void l4dtoolz::OnAntiSharing(IConVar *var, const char *pOldValue, float flOldVal
 }
 ConVar sv_anti_sharing("sv_anti_sharing", "0", 0, "No family sharing", true, 0, true, 1, l4dtoolz::OnAntiSharing);
 
-// Linux: void ReplyReservationRequest(void *, void *, void *);
-void ReplyReservationRequest(void *, void *){
+// Linux: static void ReplyReservationRequest(void *, void *, void *);
+static void ReplyReservationRequest(void *, void *){
 	return;
 }
 
