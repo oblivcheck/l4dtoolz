@@ -11,9 +11,9 @@
 #define cookie_idx	0x5B
 #define maxcl_idx	0x41
 #define steam3_idx	0x41
-#define steam3_off	0x0D
-#define authreq_idx	0x1A // rodata (?)
-#define authrsp_idx	0x24 // bss
+#define steam3_off	0xF
+#define authreq_idx	0x1D // rodata (?)
+#define authrsp_idx	0x25 // bss
 #define lobbyreq_idx	0x3E // rodata
 
 uchar max_player_new[] = {0x06, 0x00, 0xB8, '*', 0x00, 0x00, 0x00, 0xC3};

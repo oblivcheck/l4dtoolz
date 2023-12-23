@@ -22,7 +22,7 @@ LINK += -shared
 
 CFLAGS += -Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp -D_snprintf=snprintf \
 	-Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp \
-	-std=c++11 -Wall -Werror -fPIC -fno-exceptions -fno-rtti -msse -m32 -Ofast -pipe -D_LINUX \
+	-std=c++11 -Wall -fpermissive -fPIC -fno-exceptions -fno-rtti -msse -m32 -Ofast -pipe -D_LINUX \
 	-fvisibility=hidden -fvisibility-inlines-hidden -static-libgcc -fno-strict-aliasing
 
 OBJ_BIN := $(OBJECTS:%.cpp=$(BIN_DIR)/%.o)
