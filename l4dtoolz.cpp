@@ -151,7 +151,7 @@ ConVar sv_steam_bypass("sv_steam_bypass", "0", 0, "Bypass steam validation", tru
 #define snapshot_idx 0x88  // 2231
 void l4dtoolz::ClientSettingsChanged(edict_t *pEdict)
 {
-    if (g_tickrate == 30) return;
+    // if (g_tickrate == 30) return;
     CHK_RET_MSG(!sv_ptr, "sv");
     auto edicts = ((edict_t **)sv_ptr)[edict_idx];
     CHK_RET_MSG(!CHKPTR(edicts, 0x3U), "edicts");
@@ -256,7 +256,7 @@ bool l4dtoolz::Load(CreateInterfaceFn interfaceFactory, CreateInterfaceFn gameSe
         match_max_org = title[0][match_idx];
     }
 
-    if ((g_tickrate != 30) && !tickint_ptr) {
+    if (!tickint_ptr) {
         auto game = (uintptr_t **)gameServerFactory(INTERFACEVERSION_SERVERGAMEDLL, NULL);
         tickint_ptr = (uintptr_t)&game[0][tickint_idx];
         tickint_org = game[0][tickint_idx];
